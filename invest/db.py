@@ -49,6 +49,32 @@ CREATE TABLE IF NOT EXISTS secrets(scope TEXT, name TEXT, value TEXT, PRIMARY KE
 CREATE TABLE IF NOT EXISTS ai_messages(id INTEGER PRIMARY KEY AUTOINCREMENT, profile_id INTEGER, ts INTEGER,
   role TEXT, content TEXT);
 CREATE INDEX IF NOT EXISTS ai_messages_profile ON ai_messages(profile_id, id);
+-- v4: Haushalt – Konten, Umsätze, Regeln, Importe, Verträge, Budgets
+CREATE TABLE IF NOT EXISTS accounts(id INTEGER PRIMARY KEY AUTOINCREMENT, profile_id INTEGER NOT NULL,
+  name TEXT, kind TEXT, bank TEXT, iban TEXT, currency TEXT, balance REAL, balance_date TEXT,
+  archived INTEGER DEFAULT 0, created INTEGER);
+CREATE INDEX IF NOT EXISTS accounts_profile ON accounts(profile_id);
+CREATE TABLE IF NOT EXISTS tx(id INTEGER PRIMARY KEY AUTOINCREMENT, profile_id INTEGER NOT NULL,
+  account_id INTEGER NOT NULL, day TEXT, amount REAL, currency TEXT, counterparty TEXT, iban TEXT,
+  purpose TEXT, kind TEXT, creditor_id TEXT, mandate TEXT, category TEXT, cat_source TEXT,
+  contract_id INTEGER, note TEXT, hash TEXT, import_id INTEGER, created INTEGER,
+  UNIQUE(account_id, hash));
+CREATE INDEX IF NOT EXISTS tx_profile_day ON tx(profile_id, day);
+CREATE INDEX IF NOT EXISTS tx_account_day ON tx(account_id, day);
+CREATE TABLE IF NOT EXISTS cat_rules(id INTEGER PRIMARY KEY AUTOINCREMENT, profile_id INTEGER NOT NULL,
+  field TEXT, pattern TEXT, category TEXT, created INTEGER);
+CREATE INDEX IF NOT EXISTS cat_rules_profile ON cat_rules(profile_id);
+CREATE TABLE IF NOT EXISTS imports(id INTEGER PRIMARY KEY AUTOINCREMENT, profile_id INTEGER NOT NULL,
+  account_id INTEGER, ts INTEGER, filename TEXT, format TEXT, rows INTEGER, added INTEGER, dupes INTEGER,
+  first_day TEXT, last_day TEXT);
+CREATE TABLE IF NOT EXISTS contracts(id INTEGER PRIMARY KEY AUTOINCREMENT, profile_id INTEGER NOT NULL,
+  name TEXT, provider TEXT, category TEXT, direction TEXT, amount REAL, interval_months INTEGER,
+  next_due TEXT, account_id INTEGER, match_key TEXT, start TEXT, min_term_end TEXT, notice_days INTEGER,
+  renew_months INTEGER, legal TEXT, customer_no TEXT, contract_no TEXT, status TEXT, cancelled_to TEXT,
+  note TEXT, source TEXT, created INTEGER, updated INTEGER);
+CREATE INDEX IF NOT EXISTS contracts_profile ON contracts(profile_id);
+CREATE TABLE IF NOT EXISTS budgets(profile_id INTEGER NOT NULL, category TEXT NOT NULL, monthly REAL,
+  PRIMARY KEY(profile_id, category));
 """
 
 
