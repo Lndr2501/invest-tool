@@ -35,7 +35,7 @@ async function api(path, opts = {}) {
   let j = null;
   try { j = await r.json(); } catch (e) { j = null; }
   if (!r.ok) {
-    const err = new Error((j && j.detail) || ("Fehler " + r.status));
+    const err = new Error((j && j.detail) || ("Das hat nicht geklappt (Fehler " + r.status + ")."));
     err.status = r.status;
     throw err;
   }
@@ -177,7 +177,7 @@ part(() => ({
   async loadStatus() {
     try {
       const s = await api("/api/status");
-      this.statusText = s.collect ? "Kurse aktualisiert " + this.timeStr(s.collect) : "";
+      this.statusText = s.collect ? "Kurse zuletzt aktualisiert: " + this.timeStr(s.collect) : "";
     } catch (e) { this.statusText = ""; }
   },
   async refreshMe() {
@@ -268,7 +268,7 @@ part(() => ({
   },
   taxName() {
     const s = this.me.settings;
-    return { de: "Deutschland, vereinfacht", none: "keine", flat: "pauschal " + Math.round(s.flat_rate * 100) + " %" }[s.tax];
+    return { de: "deutsche Regeln, vereinfacht", none: "laut Einstellungen keine", flat: "pauschal " + Math.round(s.flat_rate * 100) + " % auf Gewinne" }[s.tax];
   },
   purposeName(k) { return (this.meta && this.meta.goal_purposes[k]) || k; },
 }));

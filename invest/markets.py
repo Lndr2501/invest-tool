@@ -65,71 +65,112 @@ def _crypto(mid, name, desc, short=None):
 CATALOG: dict[str, dict] = dict([
     # --- Kern (v1) ---
     _m("BTC", "Bitcoin", "crypto", "BTC-EUR",
-       "Die älteste und größte Kryptowährung. Sehr starke Schwankungen: Abstürze um 70–80 % gab es mehrfach.",
+       "Digitales Geld ohne Bank dahinter, die älteste und größte Kryptowährung. "
+       "Abstürze um 70–80 % gab es mehrmals, also nur für Geld, das du lange nicht brauchst.",
        intraday=[("binance", "BTCEUR", "EUR"), ("kraken", "XBTEUR", "EUR")]),
     _m("GOLD", "Gold", "metal", "GC=F",
-       "Wertspeicher seit Jahrtausenden. Bringt keine Zinsen, schwankt aber deutlich weniger als Aktien.",
+       "Edelmetall ohne Zinsen, das sich oft anders entwickelt als Aktien. Gut als kleine Beimischung, "
+       "kann aber auch jahrelang fallen.",
        intraday=[("binance", "PAXGUSDT", "USD"), ("kraken", "PAXGEUR", "EUR")], spot="XAU", always_open=True,
        costs={"buy_fee": 0.0025, "spread": 0.005, "custody_pa": 0.003}),
     _m("SILVER", "Silber", "metal", "SI=F",
-       "Edelmetall und Industrierohstoff. Schwankt deutlich stärker als Gold.",
+       "Edelmetall, das auch die Industrie braucht. Schwankt deutlich stärker als Gold, eher als kleine Beimischung.",
        intraday=[("yahoo", "SI=F", "USD")], spot="XAG",
        costs={"buy_fee": 0.0025, "spread": 0.01, "custody_pa": 0.002}),
     _m("MSCIW", "MSCI World (ETF)", "etf", "EUNL.DE",
-       "Rund 1.400 große Firmen aus 23 Industrieländern in einem Paket. Der Klassiker zum langfristigen Sparen.",
+       "ETF, also ein Korb mit rund 1.400 großen Firmen aus 23 Industrieländern. Der Klassiker für Einsteiger zum "
+       "langen Sparen, kann in Krisen aber um 30–50 % fallen.",
        short="MSCI World", isin="IE00B4L5Y983", costs={"buy_fee": 0.001, "spread": 0.002, "custody_pa": 0.002}),
     # --- Krypto ---
-    _crypto("ETH", "Ethereum", "Zweitgrößte Kryptowährung, Plattform für Anwendungen. Schwankt noch stärker als Bitcoin."),
-    _crypto("SOL", "Solana", "Junge Krypto-Plattform (seit 2020). Sehr spekulativ."),
-    _crypto("XRP", "XRP", "Kryptowährung für Zahlungen zwischen Banken. Sehr spekulativ."),
-    _crypto("ADA", "Cardano", "Krypto-Plattform aus der Forschung. Sehr spekulativ."),
-    _crypto("DOGE", "Dogecoin", "Als Spaß gestartete Kryptowährung. Der Kurs hängt stark an Stimmung und Prominenten."),
-    _crypto("LTC", "Litecoin", "Eine der ältesten Kryptowährungen, technisch ähnlich wie Bitcoin."),
-    _crypto("LINK", "Chainlink", "Dienst, der Krypto-Anwendungen mit Daten versorgt. Sehr spekulativ."),
-    _crypto("BNB", "BNB", "Kryptowährung der Börse Binance. Hängt am Erfolg eines einzelnen Unternehmens."),
+    _crypto("ETH", "Ethereum", "Zweitgrößte Kryptowährung und Plattform für digitale Anwendungen. "
+                               "Schwankt noch stärker als Bitcoin, nur für kleine Beträge."),
+    _crypto("SOL", "Solana", "Junge Kryptowährung für digitale Anwendungen (seit 2020). Sehr riskant, nur für Geld, dessen Verlust "
+                             "du verkraften kannst."),
+    _crypto("XRP", "XRP", "Kryptowährung für schnelle Zahlungen zwischen Banken. Sehr riskant, nur für Geld, "
+                          "dessen Verlust du verkraften kannst."),
+    _crypto("ADA", "Cardano", "Kryptowährung für digitale Anwendungen, aus der Forschung entstanden. Sehr riskant, nur für Geld, "
+                              "dessen Verlust du verkraften kannst."),
+    _crypto("DOGE", "Dogecoin", "Als Spaß gestartete Kryptowährung, der Kurs hängt an Stimmung und Prominenten. "
+                                "Eher eine Wette als eine Geldanlage."),
+    _crypto("LTC", "Litecoin", "Eine der ältesten Kryptowährungen, technisch ähnlich wie Bitcoin. "
+                               "Sehr starke Schwankungen, nur für kleine Beträge."),
+    _crypto("LINK", "Chainlink", "Dienst, der Krypto-Anwendungen mit Daten von außen versorgt. "
+                                 "Sehr riskant, nur für Geld, dessen Verlust du verkraften kannst."),
+    _crypto("BNB", "BNB", "Kryptowährung der Handelsplattform Binance, hängt am Erfolg dieser einen Firma. "
+                          "Sehr riskant, nur für kleine Beträge."),
     # --- Metalle ---
     _m("PLATINUM", "Platin", "metal", "PL=F",
-       "Seltenes Edelmetall, vor allem für Katalysatoren und Schmuck gefragt. Schwankt stärker als Gold.",
+       "Seltenes Edelmetall, vor allem für Auto-Katalysatoren und Schmuck gefragt. Schwankt stärker als Gold, "
+       "eher etwas für Kenner.",
        intraday=[("yahoo", "PL=F", "USD")], spot="XPT"),
     _m("PALLADIUM", "Palladium", "metal", "PA=F",
-       "Edelmetall für Autokatalysatoren. Sehr starke Preissprünge in beide Richtungen.",
+       "Edelmetall, das vor allem in Auto-Katalysatoren steckt. Der Preis springt stark nach oben und unten, "
+       "eher etwas für Kenner.",
        intraday=[("yahoo", "PA=F", "USD")], spot="XPD"),
     # --- ETFs ---
     _m("FTSEAW", "FTSE All-World (ETF)", "etf", "VWCE.DE",
-       "Rund 4.000 Firmen aus Industrie- und Schwellenländern – sehr breit gestreut.", short="FTSE All-World",
+       "ETF-Korb mit rund 4.000 Firmen aus Industrieländern und aufstrebenden Ländern wie China oder Indien. "
+       "Gut zum langen Sparen, schwankt ähnlich wie der MSCI World.", short="FTSE All-World",
        isin="IE00BK5BQT80"),
     _m("ACWI", "MSCI ACWI IMI (ETF)", "etf", "SPYI.DE",
-       "Industrie- und Schwellenländer inklusive kleiner Firmen – fast der ganze Aktienmarkt.", short="MSCI ACWI IMI",
+       "ETF-Korb mit fast allen Aktien der Welt, auch kleinen Firmen und aufstrebenden Ländern. "
+       "Gut zum langen Sparen, schwankt ähnlich wie der MSCI World.", short="MSCI ACWI IMI",
        isin="IE00B3YLTY66"),
-    _m("SP500", "S&P 500 (ETF)", "etf", "SXR8.DE", "Die 500 größten Firmen der USA.", short="S&P 500",
+    _m("SP500", "S&P 500 (ETF)", "etf", "SXR8.DE",
+       "ETF-Korb mit den 500 größten Firmen der USA. Gut zum langen Sparen, "
+       "setzt aber alles auf ein Land.", short="S&P 500",
        isin="IE00B5BMR087"),
     _m("NDX", "Nasdaq 100 (ETF)", "etf", "SXRV.DE",
-       "Die 100 größten, technologielastigen Firmen der US-Börse Nasdaq. Schwankt stärker als der breite Markt.",
+       "ETF-Korb mit den 100 größten Firmen der US-Börse Nasdaq, vor allem Technik. Schwankt stärker als "
+       "der breite Markt, eher als Beimischung.",
        short="Nasdaq 100", isin="IE00B53SZB19"),
-    _m("EM", "Schwellenländer (ETF)", "etf", "IS3N.DE", "Firmen aus Schwellenländern wie China, Indien, Taiwan und Brasilien.",
+    _m("EM", "Schwellenländer (ETF)", "etf", "IS3N.DE",
+       "ETF-Korb mit Firmen aus aufstrebenden Ländern (Schwellenländern) wie China, Indien und Brasilien. "
+       "Schwankt stärker als der MSCI World, eher als Beimischung.",
        short="Schwellenländer", isin="IE00BKM4GZ66"),
-    _m("DAX", "DAX (ETF)", "etf", "EXS1.DE", "Die 40 größten deutschen Firmen.", short="DAX", isin="DE0005933931"),
-    _m("STOXX600", "Europa – STOXX 600 (ETF)", "etf", "EXSA.DE", "600 Firmen aus ganz Europa.", short="STOXX 600",
+    _m("DAX", "DAX (ETF)", "etf", "EXS1.DE", "ETF-Korb mit den 40 größten deutschen Firmen. Setzt alles auf "
+       "Deutschland, eher als Ergänzung zu einem Welt-ETF.", short="DAX", isin="DE0005933931"),
+    _m("STOXX600", "Europa – STOXX 600 (ETF)", "etf", "EXSA.DE",
+       "ETF-Korb mit 600 Firmen aus ganz Europa. Eher als Ergänzung zu einem Welt-ETF, schwankt wie Aktien insgesamt.",
+       short="STOXX 600",
        isin="DE0002635307", adjusted=True),
     _m("EUGOV", "Euro-Staatsanleihen (ETF)", "bond", "EUNH.DE",
-       "Staatsanleihen aus dem Euroraum. Schwankt wenig und bringt Zinsen – das Gegengewicht zu Aktien.",
+       "ETF mit Staatsanleihen aus dem Euroraum, also Krediten an Staaten, die Zinsen bringen. "
+       "Ruhiges Gegengewicht zu Aktien, kann bei steigenden Zinsen aber spürbar fallen.",
        short="Euro-Staatsanleihen", isin="IE00B4WXJJ64"),
     # --- Fonds ---
     _m("FUNDSMITH", "Fundsmith Equity (Fonds)", "fund", "0P0000RU81.L",
-       "Aktiv verwalteter Aktienfonds mit rund 30 Qualitätsfirmen. Höhere laufende Kosten als ein ETF.",
+       "Aktienfonds, bei dem ein Manager rund 30 Firmen selbst auswählt. Kostet jedes Jahr deutlich mehr als ein ETF "
+       "und schwankt wie Aktien.",
        short="Fundsmith Equity", isin="LU0690375182", cur="GBP"),
     # --- Aktien ---
-    _m("AAPL", "Apple", "stock", "AAPL", "iPhone-Hersteller und eines der wertvollsten Unternehmen der Welt.", cur="USD"),
-    _m("MSFT", "Microsoft", "stock", "MSFT", "Software (Windows, Office) und Cloud.", cur="USD"),
-    _m("NVDA", "Nvidia", "stock", "NVDA", "Grafik- und KI-Chips. Stark gestiegen und entsprechend schwankungsanfällig.",
+    _m("AAPL", "Apple", "stock", "AAPL",
+       "Aktie (Firmenanteil) des iPhone-Herstellers, einer der wertvollsten Firmen der Welt. "
+       "Als einzelne Aktie riskanter als ein ETF-Korb, eher als kleine Beimischung.", cur="USD"),
+    _m("MSFT", "Microsoft", "stock", "MSFT",
+       "Aktie des Software-Konzerns hinter Windows und Office, dazu Rechenzentren zum Mieten (Cloud). "
+       "Als einzelne Aktie riskanter als ein ETF-Korb, eher als kleine Beimischung.", cur="USD"),
+    _m("NVDA", "Nvidia", "stock", "NVDA", "Aktie des Herstellers von Grafik- und KI-Chips. Stark gestiegen und deshalb "
+       "anfällig für starke Rückschläge.",
        cur="USD"),
-    _m("AMZN", "Amazon", "stock", "AMZN", "Onlinehandel und Cloud-Dienste (AWS).", cur="USD"),
-    _m("GOOGL", "Alphabet (Google)", "stock", "GOOGL", "Google-Suche, YouTube und Werbung.", short="Alphabet", cur="USD"),
-    _m("TSLA", "Tesla", "stock", "TSLA", "Elektroautos. Eine der am stärksten schwankenden großen Aktien.", cur="USD"),
-    _m("SAP", "SAP", "stock", "SAP.DE", "Größter deutscher Softwarekonzern."),
-    _m("SIE", "Siemens", "stock", "SIE.DE", "Industrie, Automatisierung, Bahn- und Gebäudetechnik."),
-    _m("ALV", "Allianz", "stock", "ALV.DE", "Versicherung und Vermögensverwaltung, zahlt hohe Dividenden."),
-    _m("NESN", "Nestlé", "stock", "NESN.SW", "Lebensmittel und Getränke. Gilt als eher ruhige Aktie.", cur="CHF"),
+    _m("AMZN", "Amazon", "stock", "AMZN",
+       "Aktie des Onlinehändlers, der auch Rechenzentren zum Mieten (AWS) anbietet. "
+       "Als einzelne Aktie riskanter als ein ETF-Korb, eher als kleine Beimischung.", cur="USD"),
+    _m("GOOGL", "Alphabet (Google)", "stock", "GOOGL", "Aktie der Google-Mutter: Suche, YouTube und Werbung. "
+       "Als einzelne Aktie riskanter als ein ETF-Korb, eher als kleine Beimischung.", short="Alphabet", cur="USD"),
+    _m("TSLA", "Tesla", "stock", "TSLA",
+       "Aktie des Elektroauto-Herstellers. Eine der am stärksten schwankenden großen Aktien, "
+       "nur für Geld, das du lange nicht brauchst.", cur="USD"),
+    _m("SAP", "SAP", "stock", "SAP.DE", "Aktie des größten deutschen Softwarekonzerns. "
+       "Als einzelne Aktie riskanter als ein ETF-Korb, eher als kleine Beimischung."),
+    _m("SIE", "Siemens", "stock", "SIE.DE",
+       "Aktie des Industriekonzerns für Fabrik-Automatisierung, Bahn- und Gebäudetechnik. "
+       "Als einzelne Aktie riskanter als ein ETF-Korb, eher als kleine Beimischung."),
+    _m("ALV", "Allianz", "stock", "ALV.DE",
+       "Aktie des Versicherungskonzerns, zahlt hohe Dividenden (Gewinnanteile an die Aktionäre). "
+       "Als einzelne Aktie riskanter als ein ETF-Korb, eher als kleine Beimischung."),
+    _m("NESN", "Nestlé", "stock", "NESN.SW", "Aktie des Lebensmittelkonzerns (Nescafé, Maggi). Gilt als eher ruhig, "
+       "ist als einzelne Aktie aber riskanter als ein ETF-Korb.", cur="CHF"),
 ])
 
 _state = {"sig": None}

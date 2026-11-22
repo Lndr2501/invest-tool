@@ -23,13 +23,16 @@ MIXES = {
 }
 BLOCKS = {"world": "MSCIW", "bonds": "EUGOV", "gold": "GOLD", "crypto": "BTC"}
 BLOCK_TEXT = {
-    "world": "Welt-Aktien-ETF: über 1.000 große Firmen aus vielen Ländern in einem Produkt. Der Motor für langfristiges "
-             "Wachstum – schwankt aber, auch mal um 30–50 %.",
-    "bonds": "Anleihen-ETF (Staatsanleihen): wenig Rendite, aber deutlich ruhiger. Bremst Abstürze ab.",
-    "gold": "Gold: bringt keine Zinsen, läuft aber oft anders als Aktien. Kleine Beimischung zur Absicherung.",
-    "crypto": "Bitcoin: sehr starke Schwankungen (Abstürze um 70–80 % gab es mehrmals). Nur als kleine Beimischung, "
+    "world": "Ein Korb mit über 1.000 großen Firmen aus vielen Ländern, den du an der Börse kaufst. Bringt auf lange "
+             "Sicht das meiste Wachstum, kann zwischendurch aber um 30–50 % fallen.",
+    "bonds": "Ein Korb mit Staatsanleihen, also Krediten an Staaten, die Zinsen bringen. Wächst weniger als Aktien, "
+             "schwankt aber viel weniger und federt Abstürze oft ab.",
+    "gold": "Bringt keine Zinsen, entwickelt sich aber oft anders als Aktien. Ein kleiner Anteil kann Abstürze im Rest "
+            "abfedern.",
+    "crypto": "Digitales Geld ohne Bank dahinter. Abstürze um 70–80 % gab es mehrmals, also nur ein kleiner Anteil "
               "mit Geld, dessen Verlust du verkraften würdest.",
-    "cash": "Tagesgeld: sicher und jederzeit verfügbar, Zinsen etwa 1,5–3 %. Für Geld, das du bald brauchst.",
+    "cash": "Sparkonto mit etwa 1,5–3 % Zinsen im Jahr, an das du jederzeit kommst. Bis 100.000 € pro Bank gesetzlich "
+            "abgesichert, richtig für Geld, das du bald brauchst.",
 }
 REACTION_RISK = {"sell": 1, "worry": 2, "wait": 3, "buy": 4, "buy_more": 5}
 
@@ -74,22 +77,25 @@ def suggest(con, profile: dict, a: dict) -> dict:
 
     steps = []
     if debt:
-        steps.append({"title": "Teure Schulden tilgen", "text": f"Zuerst die {fmt_money(debt, cur)} Schulden abbezahlen. "
-                      "Dispo- und Ratenkredite kosten oft 8–15 % Zinsen – das schlägt jede Anlage."})
+        steps.append({"title": "Teure Schulden tilgen", "text": f"Zahl zuerst die {fmt_money(debt, cur)} Schulden ab. "
+                      "Dispo- und Ratenkredite kosten oft 8–15 % Zinsen im Jahr, so viel bringt keine sichere Geldanlage."})
     if gap > 0:
         months = gap / monthly if monthly else None
-        steps.append({"title": "Notgroschen aufbauen", "text": f"{fmt_money(emergency, cur)} (3 Monatsausgaben) auf ein "
-                      f"Tagesgeldkonto. Dir fehlen {fmt_money(gap, cur)}"
-                      + (f" – mit {fmt_money(monthly, cur)} im Monat etwa {fmt_num(months, 0)} Monate." if months else ".")})
+        steps.append({"title": "Notgroschen aufbauen", "text": f"Leg {fmt_money(emergency, cur)} (3 Monatsausgaben) für "
+                      f"Notfälle wie ein kaputtes Auto auf ein Tagesgeldkonto. Dir fehlen noch {fmt_money(gap, cur)}"
+                      + (f", mit {fmt_money(monthly, cur)} im Monat hast du das in etwa {fmt_num(months, 0)} Monaten." if months else ".")})
     if purpose != "emergency":
         h = horizon(years)
-        how = {"short": "auf Tagesgeld oder Festgeld – bei weniger als 3 Jahren ist Schwankendes zu riskant",
-               "mid": "in eine Mischung aus Anleihen- und Aktien-ETF", "long": "breit gestreut in einen Welt-Aktien-ETF"}[h]
+        auto = (". Am einfachsten per Sparplan bei einer günstigen Online-Bank: Sie kauft jeden Monat automatisch, "
+                "oft ohne Gebühr")
+        how = {"short": "aufs Tagesgeld oder Festgeld (feste Zinsen für eine feste Zeit). Bei weniger als 3 Jahren "
+                        "sind schwankende Anlagen wie Aktien zu riskant",
+               "mid": "in eine Mischung aus Anleihen-ETF und Aktien-ETF" + auto,
+               "long": "in einen Welt-Aktien-ETF, so ist dein Geld auf viele Firmen verteilt" + auto}[h]
         steps.append({"title": "Regelmäßig anlegen", "text": f"{fmt_money(monthly, cur) if monthly else 'Ein fester Betrag'} "
-                      f"im Monat {how}. Am einfachsten als Sparplan bei einer günstigen Bank oder einem Neobroker "
-                      "(Sparplan-Ausführung oft kostenlos)."})
-    steps.append({"title": "Dranbleiben", "text": "Einmal im Jahr prüfen, nicht bei jeder Schlagzeile verkaufen. "
-                  "Gehaltserhöhung? Sparrate mit erhöhen."})
+                      f"im Monat {how}."})
+    steps.append({"title": "Dranbleiben", "text": "Schau einmal im Jahr drauf und verkauf nicht bei jeder schlechten "
+                  "Nachricht. Bekommst du mehr Gehalt, erhöhe auch die Sparrate."})
 
     forecast = None
     goal_text = None
@@ -99,8 +105,8 @@ def suggest(con, profile: dict, a: dict) -> dict:
             i = (1 + CASH_RATE) ** (1 / 12) - 1
             fv = monthly * (((1 + i) ** n - 1) / i) * (1 + i)
             forecast = {"kind": "cash", "invested": monthly * n, "p50": fv, "p5": monthly * n, "p95": fv,
-                        "text": f"Auf Tagesgeld mit {fmt_num(CASH_RATE * 100, 1)} % Zinsen hast du nach "
-                                f"{fmt_num(years, 0)} Jahren etwa {fmt_money(fv, cur)} ({fmt_money(monthly * n, cur)} eingezahlt)."}
+                        "text": f"Auf dem Tagesgeld mit {fmt_num(CASH_RATE * 100, 1)} % Zinsen hast du nach "
+                                f"{fmt_num(years, 0)} Jahren etwa {fmt_money(fv, cur)} (eingezahlt: {fmt_money(monthly * n, cur)})."}
         else:
             try:
                 r = service.calc_future(con, profile, {"initial": 0, "monthly": monthly, "years": years,
@@ -108,9 +114,9 @@ def suggest(con, profile: dict, a: dict) -> dict:
                 forecast = {"kind": "sim", "invested": r["invested"], "p5": r["end"][5], "p50": r["end"][50],
                             "p95": r["end"][95], "p_loss": r["p_loss"], "p_goal": r.get("p_goal"),
                             "text": f"Mit {fmt_money(monthly, cur)} im Monat hast du nach {fmt_num(years, 0)} Jahren im "
-                                    f"mittleren Fall etwa {fmt_money(r['end'][50], cur)} (eingezahlt "
-                                    f"{fmt_money(r['invested'], cur)}). Schlechter Fall (1 von 20): "
-                                    f"{fmt_money(r['end'][5], cur)}, guter Fall: {fmt_money(r['end'][95], cur)}."}
+                                    f"mittleren Verlauf etwa {fmt_money(r['end'][50], cur)} (eingezahlt: "
+                                    f"{fmt_money(r['invested'], cur)}). In 9 von 10 Fällen landest du zwischen "
+                                    f"{fmt_money(r['end'][5], cur)} und {fmt_money(r['end'][95], cur)}."}
             except ValueError:
                 forecast = None
     if target:
@@ -120,8 +126,8 @@ def suggest(con, profile: dict, a: dict) -> dict:
             goal_text = (f"Für {fmt_money(target, cur)} in {fmt_num(years, 0)} Jahren brauchst du etwa "
                          f"{fmt_money(plan['monthly'], cur)} im Monat ({plan['label']}, vorsichtig gerechnet). "
                          + ("Deine Sparrate reicht." if ok else
-                            f"Mit {fmt_money(monthly, cur)} fehlt noch etwas – mehr sparen, länger warten oder "
-                            "das Ziel anpassen."))
+                            f"Mit {fmt_money(monthly, cur)} reicht es noch nicht: Spar mehr, gib dir mehr Zeit oder "
+                            "setz ein kleineres Ziel."))
     mix_rows = [{"key": k, "pct": v, "asset": BLOCKS.get(k), "text": BLOCK_TEXT[k],
                  "name": {"world": "Welt-Aktien-ETF", "bonds": "Anleihen-ETF", "gold": "Gold", "crypto": "Bitcoin",
                           "cash": "Tagesgeld"}[k]} for k, v in mix.items()]

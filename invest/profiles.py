@@ -67,7 +67,7 @@ REPORT_CONTENT = {
     "market": "Marktlage in einfachen Worten",
 }
 GOAL_PURPOSES = {
-    "emergency": "Notgroschen",
+    "emergency": "Notgroschen (für Notfälle)",
     "purchase": "Größere Anschaffung (Auto, Reise, Möbel)",
     "home": "Eigenes Zuhause",
     "education": "Ausbildung / Kinder",
@@ -76,10 +76,10 @@ GOAL_PURPOSES = {
     "other": "Etwas anderes",
 }
 ALERT_RULES = {
-    "moves": "Starke Kursbewegung (1 Stunde / 24 Stunden)",
-    "ath": "Neues Allzeithoch",
+    "moves": "Starke Kursbewegung (in 1 oder 24 Stunden)",
+    "ath": "Neuer Höchststand (Allzeithoch)",
     "trend": "Trend dreht (aufwärts ↔ abwärts)",
-    "regime": "Schwankung ändert sich (ruhig ↔ wild)",
+    "regime": "Schwankung ändert sich (ruhig ↔ unruhig)",
 }
 
 
@@ -108,7 +108,8 @@ def check_pin(pin: str, stored: str | None) -> bool:
 def _valid_pin(pin: str) -> str:
     pin = (pin or "").strip()
     if not (4 <= len(pin) <= 12 and pin.isdigit()):
-        raise ProfileError("Die PIN muss aus 4 bis 12 Ziffern bestehen.")
+        raise ProfileError("Die PIN muss aus 4 bis 12 Ziffern bestehen, nur Zahlen, keine Buchstaben. "
+                           "Bitte gib eine andere ein.")
     return pin
 
 
@@ -166,9 +167,9 @@ def pin_hash(con, pid: int) -> str | None:
 def create(con, name: str, pin: str | None = None, settings: dict | None = None) -> dict:
     name = " ".join((name or "").split())
     if not 1 <= len(name) <= 30:
-        raise ProfileError("Der Name muss 1 bis 30 Zeichen lang sein.")
+        raise ProfileError("Bitte gib einen Namen ein. Er darf höchstens 30 Zeichen lang sein.")
     if con.execute("SELECT 1 FROM profiles WHERE name=?", (name,)).fetchone():
-        raise ProfileError("Diesen Namen gibt es schon.")
+        raise ProfileError("Diesen Namen gibt es schon. Bitte wähle einen anderen, zum Beispiel „Anna M.“.")
     ph = hash_pin(_valid_pin(pin)) if pin else None
     s = clean_settings(settings or {})
     cur = con.execute("INSERT INTO profiles(name, pin_hash, settings, tg_chat_id, created) VALUES (?,?,?,?,?)",
@@ -180,9 +181,9 @@ def create(con, name: str, pin: str | None = None, settings: dict | None = None)
 def rename(con, pid: int, name: str) -> None:
     name = " ".join((name or "").split())
     if not 1 <= len(name) <= 30:
-        raise ProfileError("Der Name muss 1 bis 30 Zeichen lang sein.")
+        raise ProfileError("Bitte gib einen Namen ein. Er darf höchstens 30 Zeichen lang sein.")
     if con.execute("SELECT 1 FROM profiles WHERE name=? AND id<>?", (name, pid)).fetchone():
-        raise ProfileError("Diesen Namen gibt es schon.")
+        raise ProfileError("Diesen Namen gibt es schon. Bitte wähle einen anderen, zum Beispiel „Anna M.“.")
     con.execute("UPDATE profiles SET name=? WHERE id=?", (name, pid))
     con.commit()
 
@@ -314,7 +315,7 @@ def _derive(s: dict) -> dict:
 def update_settings(con, pid: int, patch: dict) -> dict:
     p = get(con, pid)
     if not p:
-        raise ProfileError("Profil nicht gefunden.")
+        raise ProfileError("Dieses Profil gibt es nicht mehr. Bitte lade die Seite neu und wähle dein Profil.")
     if "finance" in patch and isinstance((patch["finance"] or {}).get("goals"), list):
         merged = _merge(p["settings"], {k: v for k, v in patch.items() if k != "finance"})
         merged["finance"] = {**p["settings"].get("finance", {}), **patch["finance"]}  # Ziele ersetzen, nicht mischen
@@ -373,18 +374,18 @@ def normalize_holding(h: dict) -> dict:
     """Eingabe → gespeicherte Form. quantity = Feinunzen (Metalle), BTC oder ETF-Anteile."""
     asset = h.get("asset")
     if asset not in ASSETS:
-        raise ProfileError("Unbekannte Anlage.")
+        raise ProfileError("Diese Anlage kennt die App nicht. Bitte wähle eine aus der Liste.")
     out = {k: h.get(k) for k in HOLDING_FIELDS}
     out["count"] = float(h.get("count") or 1)
     if out["count"] <= 0:
-        raise ProfileError("Die Anzahl muss größer als 0 sein.")
+        raise ProfileError("Die Anzahl muss größer als 0 sein, zum Beispiel 1.")
     if markets.is_metal(asset):
         form = h.get("form") or "bar"
         out["form"] = form
         if form == "coin":
             coin = h.get("coin")
             if coin not in COIN_BY_ID:
-                raise ProfileError("Bitte eine Münze auswählen.")
+                raise ProfileError("Bitte wähle aus, welche Münze du hast.")
             size = float(h.get("weight") or 1.0)
             c = COIN_BY_ID[coin]
             out["weight"] = size if c["sizes"] else 1.0
@@ -395,11 +396,12 @@ def normalize_holding(h: dict) -> dict:
         else:
             unit = h.get("unit") or "g"
             if unit not in WEIGHT_UNITS:
-                raise ProfileError("Unbekannte Gewichtseinheit.")
+                raise ProfileError("Diese Gewichtseinheit kennt die App nicht. Bitte wähle Gramm, Kilo oder Unze.")
             w = float(h.get("weight") or 0)
             f = float(h.get("fineness") or DEFAULT_FINENESS[asset])
             if w <= 0 or not 1 <= f <= 1000:
-                raise ProfileError("Bitte Gewicht und Feinheit angeben.")
+                raise ProfileError("Bitte gib Gewicht und Feinheit an. Die Feinheit ist eine Zahl von 1 bis 1000 "
+                                   "und steht meist eingeprägt (585 = 58,5 % Gold).")
             out.update(weight=w, unit=unit, fineness=f, coin=None)
             fg = fine_grams(out["count"], w, unit, f)
         out["quantity"] = fg / OZ
@@ -407,19 +409,20 @@ def normalize_holding(h: dict) -> dict:
         out["form"] = "units"
         q = float(h.get("quantity") or 0)
         if q <= 0:
-            raise ProfileError("Bitte die Menge angeben.")
+            raise ProfileError("Bitte gib die Menge an, also wie viele Anteile oder Coins du hast. "
+                               "Sie muss größer als 0 sein.")
         out.update(quantity=q, count=1.0, weight=None, unit=None, fineness=None, coin=None)
     bd = (h.get("buy_date") or "").strip() or None
     if bd:
         try:
             time.strptime(bd, "%Y-%m-%d")
         except ValueError:
-            raise ProfileError("Kaufdatum bitte als JJJJ-MM-TT.") from None
+            raise ProfileError("Bitte gib das Kaufdatum als Jahr-Monat-Tag ein, zum Beispiel 2024-03-15.") from None
     out["buy_date"] = bd
     bp = h.get("buy_price")
     out["buy_price"] = float(bp) if bp not in (None, "") else None
     if out["buy_price"] is not None and out["buy_price"] < 0:
-        raise ProfileError("Der Kaufpreis darf nicht negativ sein.")
+        raise ProfileError("Der Kaufpreis darf nicht unter 0 liegen. Kennst du ihn nicht, lass das Feld einfach leer.")
     out["buy_cur"] = h.get("buy_cur") if h.get("buy_cur") in CURRENCIES else None
     out["label"] = (out.get("label") or "").strip()[:60] or None
     out["note"] = (out.get("note") or "").strip()[:200] or None
@@ -437,7 +440,7 @@ def save_holding(con, pid: int, h: dict, hid: int | None = None) -> dict:
     n = normalize_holding(h)
     if hid:
         if not con.execute("SELECT 1 FROM holdings WHERE id=? AND profile_id=?", (hid, pid)).fetchone():
-            raise ProfileError("Position nicht gefunden.")
+            raise ProfileError("Diesen Eintrag gibt es nicht mehr. Bitte lade die Seite neu.")
         con.execute(f"UPDATE holdings SET {', '.join(f'{k}=?' for k in HOLDING_FIELDS)} WHERE id=? AND profile_id=?",
                     [n[k] for k in HOLDING_FIELDS] + [hid, pid])
     else:
@@ -463,19 +466,19 @@ def list_plans(con, pid: int) -> list[dict]:
 
 def save_plan(con, pid: int, p: dict, plan_id: int | None = None) -> dict:
     if p.get("asset") not in ASSETS:
-        raise ProfileError("Unbekannte Anlage.")
+        raise ProfileError("Diese Anlage kennt die App nicht. Bitte wähle eine aus der Liste.")
     amount = float(p.get("amount") or 0)
     if amount <= 0:
-        raise ProfileError("Die Sparrate muss größer als 0 sein.")
+        raise ProfileError("Der Betrag pro Monat muss größer als 0 sein, zum Beispiel 50.")
     cur = p.get("cur") if p.get("cur") in CURRENCIES else "EUR"
     start, end = (p.get("start") or "").strip(), (p.get("end") or "").strip() or None
     for d in filter(None, (start, end)):
         try:
             time.strptime(d, "%Y-%m-%d")
         except ValueError:
-            raise ProfileError("Datum bitte als JJJJ-MM-TT.") from None
+            raise ProfileError("Bitte gib das Datum als Jahr-Monat-Tag ein, zum Beispiel 2025-01-01.") from None
     if not start:
-        raise ProfileError("Bitte ein Startdatum angeben.")
+        raise ProfileError("Bitte gib an, ab wann der Sparplan läuft (Startdatum).")
     vals = (p["asset"], amount, cur, start, end)
     if plan_id:
         con.execute("UPDATE plans SET asset=?, amount=?, cur=?, start=?, end=? WHERE id=? AND profile_id=?",

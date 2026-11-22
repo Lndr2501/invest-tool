@@ -20,10 +20,11 @@ def status() -> list[str]:
         n5, t0, t1 = con.execute("SELECT COUNT(*), MIN(ts), MAX(ts) FROM candles_5m WHERE asset=?", (a,)).fetchone()
         nd, d0, d1 = con.execute("SELECT COUNT(*), MIN(day), MAX(day) FROM candles_1d WHERE asset=?", (a,)).fetchone()
         age = f"{(now - t1) / 60:.0f} min alt" if t1 else ""
-        out.append(f"{a:7} 5 min: {n5:>8} Kerzen {_fmt(t0)} → {_fmt(t1)} ({age}) | täglich: {nd:>5} Tage {d0} → {d1}")
+        out.append(f"{a:7} alle 5 min: {n5:>8} Kurse {_fmt(t0)} → {_fmt(t1)} ({age}) | "
+                   f"täglich: {nd:>5} Tage {d0} → {d1}")
     fx = con.execute("SELECT COUNT(*), MIN(day), MAX(day) FROM fx_daily").fetchone()
     hi = con.execute("SELECT geo, COUNT(*), MIN(month), MAX(month) FROM hicp GROUP BY geo").fetchall()
-    out.append(f"EUR/USD: {fx[0]} Tage {fx[1]} → {fx[2]} | HVPI: {hi}")
+    out.append(f"Wechselkurs EUR/USD: {fx[0]} Tage {fx[1]} → {fx[2]} | Inflation (HVPI): {hi}")
     for job, ts, ok, msg in con.execute(
         "SELECT job, MAX(ts), ok, msg FROM runs GROUP BY job ORDER BY job").fetchall():
         out.append(f"letzter Lauf {job}: {_fmt(ts)} {'OK' if ok else 'FEHLER'} – {msg[:300]}")

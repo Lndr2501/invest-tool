@@ -20,13 +20,18 @@ import pandas as pd
 
 from . import db, markets, profiles, service, telegram
 from .config import ASSETS, CONF_DIR, settings, telegram_conf
-from .units import fmt_money
+from .units import fmt_money, fmt_num
 
 log = logging.getLogger("invest.alerts")
 TZ = ZoneInfo("Europe/Berlin")
 LEVELS = {"normal": 1.0, "strong": 1.5}
 GROUP = {"move_1h": "moves", "zscore_1h": "moves", "move_24h": "moves", "ath": "ath", "trend": "trend",
          "regime": "regime"}
+# Beruhigender Schluss für Alarme: sagt, was das heißt, ohne zu beraten
+CALM_DOWN = ("<i>Nur ein Hinweis, keine Aufforderung zum Verkaufen. Solche Stürze gab es schon oft. Wichtig ist vor "
+             "allem, wann du das Geld brauchst.</i>")
+CALM_UP = "<i>Nur ein Hinweis, keine Aufforderung zum Kaufen. Kurse können auch schnell wieder fallen.</i>"
+CALM = "<i>Nur ein Hinweis, keine Aufforderung zum Kaufen oder Verkaufen.</i>"
 
 
 # ---------- CLI-Hilfen (wie v1) ----------
@@ -43,7 +48,9 @@ def telegram_test() -> list[str]:
     out = []
     for p in profiles.list_profiles(con):
         if p["tg_chat_id"]:
-            ok = telegram.send(p["tg_chat_id"], f"✅ <b>Invest-Tool</b> ist mit dem Profil {html.escape(p['name'])} verbunden.")
+            ok = telegram.send(p["tg_chat_id"], f"✅ Der <b>Invest-Ratgeber</b> ist mit dem Profil "
+                                                f"{html.escape(p['name'])} verbunden. Hier kommen deine Berichte "
+                                                "und Alarme an.")
             out.append(f"{p['name']}: {'gesendet' if ok else 'FEHLER'}")
     con.close()
     return out or ["Kein Profil mit Telegram verbunden."]
@@ -172,21 +179,26 @@ def format_event(con, profile: dict, ev: dict) -> str:
         r = ev["r"]
         span = "1 Stunde" if rule != "move_24h" else "24 Stunden"
         icon = ("🔺" if r > 0 else "🔻") if rule != "move_24h" else ("📈" if r > 0 else "📉")
-        head = f"{icon} <b>{name} {_chg(r)} in {span}</b>"
+        head = f"{icon} <b>{name} {_chg(r)} in {span}</b>\nDer Kurs ist deutlich {'gestiegen' if r > 0 else 'gefallen'}."
         if rule == "zscore_1h":
-            head = f"⚠️ <b>{name}: ungewöhnliche Stunde ({_chg(r)})</b>\n{ev['z']:.1f}× so stark wie üblich"
+            head = (f"⚠️ <b>{name}: ungewöhnliche Stunde ({_chg(r)})</b>\nDer Kurs hat sich {fmt_num(ev['z'], 1)}× so stark "
+                    "bewegt wie in einer üblichen Stunde.")
         body = [head, price]
         pf = service.portfolio(con, profile)
         mine = next((x for x in pf["alloc"] if x["asset"] == a), None)
         if mine:
             delta = mine["value"] * (1 - 1 / (1 + r))
-            body.append(f"Dein {name}: {'+' if delta >= 0 else '−'}{fmt_money(abs(delta), pf['currency'])}")
+            body.append(f"Dein {name}: {'+' if delta >= 0 else '−'}{fmt_money(abs(delta), pf['currency'])} in {span}")
+        body.append(CALM_UP if r > 0 else CALM_DOWN)
         return "\n".join(body)
     if rule == "ath":
-        return f"🏆 <b>{name}: neues Allzeithoch</b>\n{price}"
+        return (f"🏆 <b>{name}: neues Allzeithoch</b>\nDer Kurs ist so hoch wie noch nie (höchster Stand bisher).\n"
+                f"{price}\n{CALM}")
     if rule == "trend":
-        return f"🧭 <b>{name}: Trend dreht</b>\n{ev['from']} → <b>{ev['to']}</b>\n{price}"
-    return f"🔄 <b>{name}: Schwankung ändert sich</b>\n{ev['from']} → <b>{ev['to']}</b>\n{price}"
+        return (f"🧭 <b>{name}: Trend dreht</b>\nDer Trend ist die Richtung, in die der Kurs in den letzten Wochen "
+                f"und Monaten lief.\n{ev['from']} → <b>{ev['to']}</b>\n{price}\n{CALM}")
+    return (f"🔄 <b>{name}: Schwankung ändert sich</b>\nSchwankung heißt: wie stark der Kurs hoch und runter geht.\n"
+            f"{ev['from']} → <b>{ev['to']}</b>\n{price}\n{CALM}")
 
 
 def _today_start() -> int:

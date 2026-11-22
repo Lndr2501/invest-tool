@@ -15,8 +15,8 @@ function freshWizard() {
 part(() => ({
   // ---------- Überblick ----------
   ov: null,
-  askChips: { ueberblick: ["Was bedeutet das alles für mich?", "Wie viel sollte ich im Monat sparen?",
-    "Welchen Steuersatz habe ich?", "Wie fange ich am besten an?"] },
+  askChips: { ueberblick: ["Was heißt das alles für mich?", "Wie fange ich mit 50 € im Monat an?",
+    "Was ist ein ETF?", "Muss ich auf Gewinne Steuern zahlen?"] },
   ovNext() {
     if (!this.ov) return [];
     // Ist der Bestand leer, zeigt die Bestand-Karte schon den Einstieg – Doppeltes weglassen
@@ -31,13 +31,13 @@ part(() => ({
   // ---------- Start-Assistent ----------
   wz: freshWizard(),
   horizons: [[2, "in 1–2 Jahren", "z. B. Urlaub, Auto, Umzug"], [4, "in 3–5 Jahren", "z. B. Führerschein, Möbel, Hochzeit"],
-    [8, "in 5–10 Jahren", "z. B. Eigenkapital für eine Wohnung"], [15, "in mehr als 10 Jahren", "Vermögen aufbauen"],
-    [30, "erst im Alter", "Altersvorsorge"]],
+    [8, "in 5–10 Jahren", "z. B. Anzahlung für eine Wohnung"], [15, "in mehr als 10 Jahren", "Vermögen aufbauen"],
+    [30, "erst im Alter", "Geld für die Rente"]],
   reactions: [["sell", "Alles verkaufen", "Ich will nicht noch mehr verlieren."],
-    ["worry", "Schlecht schlafen, aber halten", "Unangenehm, ich würde wohl nichts tun."],
-    ["wait", "Ruhig abwarten", "Das gehört dazu, es erholt sich wieder."],
+    ["worry", "Schlecht schlafen, aber behalten", "Unangenehm, ich würde wohl nichts tun."],
+    ["wait", "Ruhig abwarten", "Das gehört dazu, es erholt sich meist wieder."],
     ["buy", "Weiter sparen wie geplant", "Jetzt bekomme ich mehr für mein Geld."],
-    ["buy_more", "Extra nachkaufen", "Eine gute Gelegenheit!"]],
+    ["buy_more", "Extra dazukaufen", "Eine gute Gelegenheit!"]],
   purposeList() {
     return Object.keys((this.meta && this.meta.goal_purposes) || {}).map((k) =>
       [k, this.meta.goal_purposes[k], PURPOSE_NAME[k], PURPOSE_ICON[k] || "•"]);
@@ -112,7 +112,7 @@ part(() => ({
       g.items.push(p); g.value += p.value;
     }
     for (const a of this.pf.alloc) {
-      if (out[a.asset]) out[a.asset].extra = (a.fine_g ? this.grams(a.fine_g) + " fein · " : "") + this.num(a.share * 100, 0) + " % deines Bestands";
+      if (out[a.asset]) out[a.asset].extra = (a.fine_g ? this.grams(a.fine_g) + " reines Metall · " : "") + this.num(a.share * 100, 0) + " % deines Bestands";
     }
     return Object.values(out).sort((a, b) => b.value - a.value);
   },
@@ -152,7 +152,7 @@ part(() => ({
       if (this.hf.buy_date) {
         try { then = (await api("/api/price-at", { method: "POST", body: this.hfBody() })).value; } catch (e) { then = null; }
       }
-      let text = "Heute ca. " + this.money(now.value) + " wert";
+      let text = "Heute etwa " + this.money(now.value) + " wert";
       if (now.fine_g) text = this.grams(now.fine_g) + " reines " + this.assetName(this.hf.asset) + " · " + text;
       this.hfInfo = { now: now.value, then, text };
     } catch (e) { this.hfInfo = null; }
@@ -169,7 +169,7 @@ part(() => ({
     } catch (e) { this.hf.err = e.message; }
   },
   async delHolding(id) {
-    if (!confirm("Diese Position löschen?")) return;
+    if (!confirm("Diesen Eintrag wirklich löschen?")) return;
     await this.guard(() => api("/api/holdings/" + id, { method: "DELETE" }));
     this.hist = null; this.ov = null; await this.loadPortfolio();
   },
@@ -189,7 +189,7 @@ part(() => ({
     } catch (e) { this.plf.err = e.message; }
   },
   async delPlan(id) {
-    if (!confirm("Diesen Sparplan löschen?")) return;
+    if (!confirm("Diesen Sparplan wirklich löschen?")) return;
     await this.guard(() => api("/api/plans/" + id, { method: "DELETE" }));
     this.hist = null; this.ov = null; await this.loadPortfolio();
   },
@@ -198,10 +198,12 @@ part(() => ({
   fin: null, finEdit: {}, gf: null,
   riskLevels: [[1, "sehr vorsichtig"], [2, "vorsichtig"], [3, "ausgewogen"], [4, "mutig"], [5, "sehr mutig"]],
   riskText(r) {
-    return { 1: "Schwankungen machen dir Angst: Tagesgeld und Anleihen, Aktien nur wenig.",
-      2: "Du magst es ruhig: mehr Anleihen als Aktien.", 3: "Halb-halb bis überwiegend Aktien, wenn du lange Zeit hast.",
-      4: "Du hältst auch ein Minus von 30 % aus: überwiegend Aktien-ETF.", 5: "Du siehst Abstürze als Kaufgelegenheit: fast nur Aktien, kleine Beimischungen." }[r]
-      || "Wähle, wie gut du mit Schwankungen umgehen kannst.";
+    return { 1: "Schwankungen machen dir Angst. Passend: viel Tagesgeld und Anleihen (Geld an Staaten oder Firmen verliehen, gegen Zinsen), wenig Aktien.",
+      2: "Du magst es ruhig. Passend: mehr Anleihen (verliehenes Geld gegen Zinsen) als Aktien.",
+      3: "Etwa halb Aktien, halb Sicheres. Hast du viele Jahre Zeit, auch mehr Aktien.",
+      4: "Du hältst ein Minus von 30 % aus, aus 10.000 € werden also zeitweise 7.000 €. Passend: vor allem Aktien-ETFs (Körbe mit vielen Aktien).",
+      5: "Abstürze sind für dich eine Chance zum Nachkaufen. Passend: fast nur Aktien, dazu wenig anderes." }[r]
+      || "Wähle, wie gut du es aushältst, wenn dein Geld zeitweise weniger wert ist.";
   },
   async loadFinance() {
     const f = await this.guard(() => api("/api/finance"));
@@ -234,7 +236,7 @@ part(() => ({
   },
   async saveGoal() {
     const g = this.gf;
-    if (!g.name.trim()) { g.err = "Bitte einen Namen eingeben."; return; }
+    if (!g.name.trim()) { g.err = "Bitte gib deinem Ziel einen Namen."; return; }
     const goals = this.fin.goals.map((x) => ({ id: x.id, name: x.name, purpose: x.purpose, amount: x.amount, years: x.years }));
     const item = { id: g.id, name: g.name, purpose: g.purpose, amount: g.amount || null, years: g.years || null };
     const i = goals.findIndex((x) => x.id === g.id);
@@ -242,20 +244,20 @@ part(() => ({
     if (await this.putGoals(goals)) { this.gf = null; this.flash("Ziel gespeichert"); }
   },
   async delGoal(id) {
-    if (!confirm("Dieses Ziel löschen?")) return;
+    if (!confirm("Dieses Ziel wirklich löschen?")) return;
     await this.putGoals(this.fin.goals.filter((x) => x.id !== id).map((x) => ({ id: x.id, name: x.name, purpose: x.purpose, amount: x.amount, years: x.years })));
   },
   goalNeed() { return this.fin ? this.fin.goals.reduce((s, g) => s + (g.plan ? g.plan.monthly : 0), 0) : 0; },
   goalNeedText() {
     const need = this.goalNeed(), have = this.finEdit.saving || this.fin.planned || 0;
-    if (have >= need * 0.95) return `Für alle Ziele zusammen brauchst du etwa ${this.money(need)} im Monat. Mit ${this.money(have)} bist du auf Kurs.`;
-    return `Für alle Ziele zusammen brauchst du etwa ${this.money(need)} im Monat` + (have ? `, eingeplant sind ${this.money(have)}.` : ". Trag unten deine Sparrate ein.");
+    if (have >= need * 0.95) return `Für alle Ziele zusammen brauchst du etwa ${this.money(need)} im Monat. Mit ${this.money(have)} im Monat schaffst du das.`;
+    return `Für alle Ziele zusammen brauchst du etwa ${this.money(need)} im Monat` + (have ? `. Bisher eingeplant: ${this.money(have)}.` : ". Trag unten ein, wie viel du im Monat sparen kannst.");
   },
 
   // ---------- Märkte ----------
   mkAll: null, mkKinds: [], mkKind: "", mkq: "", mkq2: "", mkResults: [], mkSearched: false, mkBusy: false, mkBusyText: "",
   mkAsset: "", mk: null, mkRange: "1y", showMa: false,
-  ranges: [["1d", "1T"], ["1w", "1W"], ["1m", "1M"], ["1y", "1J"], ["5y", "5J"], ["10y", "10J"], ["max", "Max"]],
+  ranges: [["1d", "Tag"], ["1w", "Woche"], ["1m", "Monat"], ["1y", "1 Jahr"], ["5y", "5 Jahre"], ["10y", "10 Jahre"], ["max", "Alles"]],
   openMarkets() {
     if (this.sub && this.meta.assets[this.sub]) {
       if (this.mkAsset !== this.sub) this.mk = null;
@@ -293,7 +295,7 @@ part(() => ({
     this.mkResults = r ? r.results : [];
   },
   async mkAdd(r) {
-    this.mkBusy = true; this.mkBusyText = "Lade die ganze Kurshistorie von " + r.symbol + " … (dauert bis zu einer Minute)";
+    this.mkBusy = true; this.mkBusyText = "Lade alle bisherigen Kurse von " + r.symbol + " … Das dauert bis zu einer Minute.";
     const res = await this.guard(() => api("/api/markets", { method: "POST", body: { symbol: r.symbol } }));
     this.mkBusy = false;
     if (res) {
@@ -314,11 +316,11 @@ part(() => ({
     const parts = [];
     for (const [a, v] of Object.entries(this.mk.corr)) {
       if (v === null || !this.meta.assets[a]) continue;
-      const how = v > 0.6 ? "oft gemeinsam" : v > 0.3 ? "teilweise gemeinsam" : v > -0.1 ? "weitgehend unabhängig" : "eher gegenläufig";
+      const how = v > 0.6 ? "oft gemeinsam" : v > 0.3 ? "teilweise gemeinsam" : v > -0.1 ? "weitgehend unabhängig" : "eher entgegengesetzt";
       parts.push(`${this.shortName(a)} ${how} (${this.num(v, 2)})`);
     }
     if (!parts.length) return "";
-    return `Im letzten Jahr bewegte sich ${this.shortName(this.mk.asset)} mit ${parts.slice(0, 5).join(", ")}. Je unabhängiger zwei Anlagen sind, desto mehr glättet eine Mischung die Schwankung.`;
+    return `Im letzten Jahr bewegte sich ${this.shortName(this.mk.asset)} mit ${parts.slice(0, 5).join(", ")}. Die Zahl reicht von 1 (immer gleich) bis −1 (immer entgegengesetzt). Je unabhängiger zwei Anlagen sind, desto weniger schwankt eine Mischung aus beiden.`;
   },
   yearsText() {
     if (!this.mk) return "";
@@ -327,15 +329,15 @@ part(() => ({
     if (!full.length) return "";
     const best = full.reduce((a, b) => (b.ret > a.ret ? b : a));
     const worst = full.reduce((a, b) => (b.ret < a.ret ? b : a));
-    return `In ${up} von ${full.length} Kalenderjahren ging es aufwärts. Bestes Jahr ${best.year} (${this.pct(best.ret, 0)}), schlechtestes ${worst.year} (${this.pct(worst.ret, 0)}). In Euro gerechnet.`;
+    return `In ${up} von ${full.length} vollen Kalenderjahren stieg der Kurs. Bestes Jahr: ${best.year} (${this.pct(best.ret, 0)}), schlechtestes: ${worst.year} (${this.pct(worst.ret, 0)}). In Euro gerechnet.`;
   },
 
   // ---------- Einstellungen ----------
   st: null, stName: "", pinForm: { old: "", new: "" }, delForm: { confirm: "", pin: "" },
   tgUrl: "", tgPreview: "", tgLog: [], tgSchedule: "",
   ai: null, aiOwn: {}, aiGlob: {}, aiModels: { own: [], global: [] }, aiTest: { busy: false, res: null },
-  aiEfforts: [["", "Standard des Servers"], ["none", "Aus (none)"], ["low", "Wenig (low)"], ["medium", "Mittel (medium)"],
-    ["high", "Viel (high)"], ["xhigh", "Maximal (xhigh)"]],
+  aiEfforts: [["", "Standard"], ["none", "Kein Nachdenken"], ["low", "Wenig"], ["medium", "Mittel"],
+    ["high", "Viel"], ["xhigh", "Sehr viel"]],
   async loadSettingsPage() {
     const me = await this.refreshMe();
     if (!me) return;
@@ -344,8 +346,8 @@ part(() => ({
   },
   unitExample(a) {
     const key = this.meta.metals[a], m = this.st[key];
-    const w = { g: "1 Gramm", oz: "1 Unze", kg: "1 Kilo" }[m.unit];
-    return `${w} ${this.assetName(a)} (${String(m.fineness).replace(".", ",")}) in ${this.st.currency}`;
+    const w = { g: "1 Gramm", oz: "1 Feinunze (31,1 g)", kg: "1 Kilo" }[m.unit];
+    return `${w} ${this.assetName(a)} (Feinheit ${String(m.fineness).replace(".", ",")}) in ${this.st.currency}`;
   },
   saveSettings() { clearTimeout(this._ss); this._ss = setTimeout(() => this.doSaveSettings(), 500); },
   async doSaveSettings() {
@@ -366,7 +368,7 @@ part(() => ({
     if (me) { this.me = me; this.pinForm = { old: "", new: "" }; this.flash(me.has_pin ? "PIN gespeichert" : "PIN entfernt"); }
   },
   async deleteProfile() {
-    if (!confirm("Profil wirklich endgültig löschen?")) return;
+    if (!confirm("Profil wirklich endgültig löschen? Bestand, Ziele und Einstellungen sind dann weg.")) return;
     const r = await this.guard(() => api("/api/me", { method: "DELETE", body: this.delForm }));
     if (r) { this.me = null; this.profiles = await api("/api/profiles"); location.hash = ""; }
   },
@@ -411,8 +413,8 @@ part(() => ({
     const r = this.aiTest.res;
     if (!r) return "";
     if (!r.ok) return "Klappt noch nicht: " + (r.error || "unbekannter Fehler") + (r.models && r.models.length ? " · Verfügbare Modelle: " + r.models.slice(0, 8).join(", ") : "");
-    return `✓ Verbindung klappt (${this.num(r.ms / 1000, 1)} s). ` + (r.tools ? "Das Modell kann Werkzeuge nutzen (Rechner, Bestand, Merken)." : "Achtung: Das Modell hat kein Werkzeug aufgerufen; der Ratgeber antwortet dann nur mit einer Kurzfassung deiner Daten.") +
-      (r.models.length ? " Modelle: " + r.models.slice(0, 8).join(", ") : "");
+    return `✓ Verbindung klappt (${this.num(r.ms / 1000, 1)} s). ` + (r.tools ? "Das Modell kann Werkzeuge nutzen: rechnen, deinen Bestand lesen, sich Dinge merken." : "Achtung: Das Modell hat kein Werkzeug benutzt. Der Ratgeber kann dann nicht rechnen und kennt nur eine Kurzfassung deiner Daten.") +
+      (r.models.length ? " Verfügbare Modelle: " + r.models.slice(0, 8).join(", ") : "");
   },
   aiNeedsConsent() {
     if (!this.ai) return false;
@@ -448,11 +450,11 @@ part(() => ({
   },
   async tgTest() { const r = await this.guard(() => api("/api/telegram/test", { method: "POST" })); if (r) { this.flash("Bericht gesendet"); this.loadTgStatus(); } },
   async tgUnlink() {
-    if (!confirm("Telegram trennen?")) return;
+    if (!confirm("Telegram wirklich trennen? Dann kommen dort keine Berichte mehr an.")) return;
     const r = await this.guard(() => api("/api/telegram", { method: "DELETE" }));
-    if (r) { this.me.telegram = false; this.flash("Getrennt"); this.loadTgStatus(); }
+    if (r) { this.me.telegram = false; this.flash("Telegram getrennt"); this.loadTgStatus(); }
   },
-  kindName(k) { return { report: "Bericht", report_manual: "Bericht (von Hand)", alert: "Alarm" }[k] || k; },
+  kindName(k) { return { report: "Bericht", report_manual: "Bericht (von Hand)", alert: "Alarm (starke Bewegung)" }[k] || k; },
   firstLine(t) { return (t || "").split("\n")[0].replace(/<[^>]+>/g, ""); },
 
   // ---------- Methodik ----------

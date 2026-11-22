@@ -50,7 +50,7 @@ def clean_tuning(patch: dict, into: dict) -> None:
         try:
             into["max_tokens"] = int(min(max(int(float(patch["max_tokens"])), MAX_TOKENS[0]), MAX_TOKENS[1]))
         except (TypeError, ValueError):
-            raise AIError("Die maximale Antwortlänge muss eine Zahl sein.") from None
+            raise AIError("Die maximale Antwortlänge muss eine Zahl sein, zum Beispiel 8000.") from None
 
 
 def global_conf(con) -> dict:
@@ -69,7 +69,7 @@ def set_global(con, patch: dict) -> dict:
         new["enabled"] = patch["enabled"]
     clean_tuning(patch, new)
     if new["base_url"] and not re.match(r"^https?://", new["base_url"]):
-        raise AIError("Die Adresse muss mit http:// oder https:// beginnen.")
+        raise AIError("Die Adresse muss mit http:// oder https:// beginnen, zum Beispiel http://192.168.1.20:8000/v1.")
     if new["base_url"] != old["base_url"]:
         profiles.secret_set(con, "global", "ai_key", None)  # Key nie an eine neue Adresse mitschicken
     if patch.get("key"):
@@ -88,7 +88,7 @@ def set_own(con, profile: dict, patch: dict) -> dict:
     ai = {k: patch[k] for k in ("enabled", "consent", "mode", "api", "base_url", "model") if k in patch}
     clean_tuning(patch, ai)
     if isinstance(ai.get("base_url"), str) and ai["base_url"].strip() and not re.match(r"^https?://", ai["base_url"].strip()):
-        raise AIError("Die Adresse muss mit http:// oder https:// beginnen.")
+        raise AIError("Die Adresse muss mit http:// oder https:// beginnen, zum Beispiel http://192.168.1.20:8000/v1.")
     s = profiles.update_settings(con, pid, {"ai": ai})
     if s["ai"]["base_url"] != old.get("base_url", ""):
         profiles.secret_set(con, f"profile:{pid}", "ai_key", None)
@@ -128,15 +128,17 @@ def effective(con, profile: dict) -> dict:
     c["local"] = bool(c["base_url"]) and is_local(c["base_url"])
     reason = None
     if not own.get("enabled", True):
-        reason = "Der Assistent ist in deinen Einstellungen ausgeschaltet."
+        reason = "Der KI-Ratgeber ist bei dir ausgeschaltet. Du kannst ihn unter Einstellungen → KI-Ratgeber einschalten."
     elif not c["base_url"] or not c["model"]:
-        reason = ("Der KI-Zugang ist noch nicht eingerichtet." + (" Das macht der Admin unter Einstellungen → KI-Ratgeber."
-                  if c["scope"] == "global" else " Trag Adresse und Modell unter Einstellungen → KI-Ratgeber ein."))
+        reason = ("Der KI-Ratgeber ist noch nicht eingerichtet." + (" Das erledigt der Admin (wer die App verwaltet) "
+                  "unter Einstellungen → KI-Ratgeber." if c["scope"] == "global"
+                  else " Trag dafür unter Einstellungen → KI-Ratgeber die Adresse und das Modell ein."))
     elif c["scope"] == "global" and not c.get("enabled"):
-        reason = "Der gemeinsame KI-Zugang ist ausgeschaltet."
+        reason = "Der gemeinsame KI-Zugang ist gerade ausgeschaltet. Nur der Admin kann ihn wieder einschalten."
     elif not c["local"] and not own.get("consent"):
-        reason = (f"Der KI-Server ({urlparse(c['base_url']).hostname}) liegt außerhalb deines Heimnetzes. Deine Daten "
-                  "(Bestand, Finanzprofil) würden dorthin geschickt – bitte erst unter Einstellungen → KI-Ratgeber zustimmen.")
+        reason = (f"Der KI-Server ({urlparse(c['base_url']).hostname}) steht nicht in deinem Heimnetz. Deine Daten "
+                  "(Bestand, Finanzprofil) würden also dorthin geschickt. Wenn das für dich in Ordnung ist, "
+                  "musst du erst unter Einstellungen → KI-Ratgeber zustimmen.")
     c["ready"] = reason is None
     c["reason"] = reason
     return c
@@ -382,9 +384,10 @@ TOOLS = [
      "parameters": {"type": "object", "properties": {"asset": {"type": "string"}, "watch": {"type": "boolean"}},
                     "required": ["asset", "watch"]}},
 ]
-STATUS = {"get_overview": "Schaue in deinen Bestand …", "get_market": "Schaue mir den Markt an …",
-          "search_markets": "Suche Märkte …", "list_calculators": "Schaue in die Rechner …",
-          "run_calculator": "Rechne …", "update_finance_profile": "Merke mir das …", "watch_market": "Passe deine Märkte an …"}
+STATUS = {"get_overview": "Ich schaue in deinen Bestand …", "get_market": "Ich schaue mir die Kurse an …",
+          "search_markets": "Ich suche passende Anlagen …", "list_calculators": "Ich suche den passenden Rechner …",
+          "run_calculator": "Ich rechne das durch …", "update_finance_profile": "Ich merke mir das …",
+          "watch_market": "Ich passe deine beobachteten Märkte an …"}
 
 
 def _compact(o, limit=TOOL_RESULT_CHARS) -> str:
@@ -527,21 +530,46 @@ def run_tool(con, profile: dict, name: str, args: dict) -> tuple[dict, dict | No
 
 # ---------- Gespräch ----------
 SYSTEM = """Du bist der Finanz-Ratgeber im „Invest-Ratgeber“, einer privaten App, mit der {name} und Freunde ihr Geld \
-verstehen und planen. Du sprichst Deutsch, duzt und erklärst einfach – für Menschen ohne Vorwissen. Antworte kurz \
-(meist 3–8 Sätze oder eine kurze Liste), konkret und mit Zahlen.
+verstehen und planen. Du sprichst Deutsch und duzt. Antworte kurz (meist 3–8 Sätze oder eine kurze Liste), konkret \
+und mit Zahlen. Du schreibst für Erwachsene um die 40, die noch nie etwas mit Geldanlage zu tun hatten. Sie sollen \
+alles beim ersten Lesen verstehen. Schreib ruhig und klar wie ein guter Freund, nicht kindlich, nicht belehrend.
+- Erst die Antwort in ein bis zwei Sätzen („Was heißt das für mich?“), danach die Details.
+- Kurze Sätze (höchstens etwa 15 Wörter), ein Gedanke pro Satz, aktiv statt Passiv.
+- Erklär jedes Fachwort beim ersten Mal im Gespräch in einem Halbsatz oder in Klammern. Abkürzungen nie unerklärt.
+- Gib Zahlen eine Bedeutung, mit einem Rechenbeispiel in runden Beträgen (100 €, 1.000 €, 10.000 €): \
+„7 % pro Jahr, aus 1.000 € werden also nach einem Jahr etwa 1.070 €.“
+- Deutsche Wörter: Anlage (nicht Asset), Mischung (nicht Portfolio), Umschichten (nicht Rebalancing), Absturz vom Hoch \
+(nicht Drawdown), Schwankung (nicht Volatilität), Wertzuwachs (nicht Performance), Streuen (nicht Diversifikation).
+- Ehrlich bei Unsicherheit: „kann“, „in der Vergangenheit“, „in 9 von 10 Fällen“. Nie etwas versprechen.
+
+Immer dieselben Wörter mit diesen Erklärungen: Kurs = aktueller Preis einer Anlage. Aktie = kleiner Anteil an einer \
+Firma. Index = Liste von Firmen, deren Kurse zusammen gemessen werden (DAX = 40 große deutsche Firmen). ETF = Korb mit \
+vielen Aktien auf einmal, den man an der Börse kauft; er bildet einen Index nach. MSCI World = Index mit rund 1.400 \
+großen Firmen aus 23 Industrieländern. Depot = Konto für Aktien und ETFs bei Bank oder Online-Broker. Sparplan = jeden \
+Monat wird automatisch ein fester Betrag angelegt. Rendite nur mit Erklärung (Wertzuwachs pro Jahr im Schnitt). Zinseszins = \
+Gewinne bringen selbst wieder Gewinne. Inflation = Preise steigen; bei 2 % im Jahr kaufen 100 € in 10 Jahren nur noch so \
+viel wie heute 82 €. Tagesgeld = Sparkonto mit Zinsen, jederzeit verfügbar, bis 100.000 € pro Bank gesetzlich \
+abgesichert. Laufende Kosten = was ein ETF jedes Jahr abzieht, meist 0,1–0,3 % (nicht TER). Abgeltungsteuer = rund 26 % \
+auf Gewinne aus Geldanlagen. Freibetrag = 1.000 € Gewinn pro Jahr steuerfrei (Paare 2.000 €), dafür bei der Bank einen \
+Freistellungsauftrag stellen. Spanne = Bereich, in dem das Ergebnis in 9 von 10 Fällen landet (nicht Perzentil). \
+Mittlerer Verlauf = die Hälfte liegt darüber, die Hälfte darunter (nicht Median). Prognose = immer eine Spanne, nie eine \
+Vorhersage. Bitcoin/Krypto = digitales Geld ohne Bank dahinter, mit sehr starker Schwankung.
 
 Werkzeuge: Hol echte Daten mit get_overview, get_market, search_markets; rechne mit run_calculator (Liste: \
 list_calculators) statt im Kopf. Erfinde nie Preise, Renditen oder Bestände.
 
 So berätst du (in dieser Reihenfolge):
 1. Ziel und Zeitraum klären: Wofür wird gespart, wann wird das Geld gebraucht? Unter 3 Jahren: Tagesgeld/Festgeld, \
-nichts Schwankendes. 3–10 Jahre: Mischung mit Anleihen. Über 10 Jahre: breit gestreute Aktien-ETFs als Kern.
-2. Teure Schulden zuerst tilgen. Notgroschen: 3 Monatsausgaben (Selbstständige 6) auf Tagesgeld.
+nichts Schwankendes. 3–10 Jahre: Mischung mit Anleihen (Kredite an Staaten/Firmen). Über 10 Jahre: breit \
+gestreute Aktien-ETFs als Kern.
+2. Teure Schulden zuerst tilgen. Notgroschen (für Notfälle): 3 Monatsausgaben (Selbstständige 6) auf Tagesgeld.
 3. Sparrate aus Einkommen und Ausgaben ableiten (Richtwert 10–20 % vom Netto, Rechner „budget“).
-4. Risiko passend zur Person: Frag, wie sie reagieren würde, wenn das Depot 30 % fällt. Krypto, Einzelaktien und \
-Edelmetalle höchstens als kleine Beimischung (etwa 5–10 %), nur mit Geld, dessen Verlust verkraftbar wäre.
-5. Kosten und Steuern: günstige ETFs (laufende Kosten unter 0,3 %), Sparerpauschbetrag 1.000 €/2.000 €, \
-Teilfreistellung 30 % bei Aktien-ETFs, Gold/Krypto nach 1 Jahr steuerfrei. Steuersatz mit dem Rechner „taxrate“.
+4. Risiko passend zur Person: Frag, wie sie reagieren würde, wenn ihr Depot um 30 % fällt, aus 10.000 € also 7.000 € \
+werden. Krypto, Einzelaktien und Edelmetalle höchstens als kleine Beimischung (etwa 5–10 %), nur mit Geld, dessen \
+Verlust verkraftbar wäre.
+5. Kosten und Steuern: günstige ETFs (laufende Kosten unter 0,3 %), Freibetrag (Sparerpauschbetrag) 1.000 €/2.000 €, \
+bei Aktien-ETFs sind 30 % der Gewinne steuerfrei (Teilfreistellung), Gewinne mit Gold/Krypto nach 1 Jahr steuerfrei. \
+Steuersatz mit dem Rechner „taxrate“.
 6. Zeigen statt behaupten: mit run_calculator vorrechnen („future“, „goal“, „retirement“, „compound“ …) und Spannen \
 nennen (guter, mittlerer, schlechter Fall).
 
@@ -589,7 +617,7 @@ def chat(con, profile: dict, message: str, page: str = "") -> Iterator[dict]:
         return
     message = message.strip()[:4000]
     if not message:
-        yield {"type": "error", "text": "Leere Nachricht."}
+        yield {"type": "error", "text": "Deine Nachricht ist leer. Schreib bitte eine Frage."}
         return
     past = [m for m in history(con, profile["id"], HISTORY) if m["role"] in ("user", "assistant")]
     _save(con, profile["id"], "user", message)
@@ -613,13 +641,16 @@ def chat(con, profile: dict, message: str, page: str = "") -> Iterator[dict]:
         except AIError as e:
             if tools and rnd == 0 and "tool" in str(e).lower():
                 tools = None  # Server kann keine Werkzeuge → ohne weiter
-                yield {"type": "status", "text": "Dieser KI-Server kann keine Werkzeuge – ich antworte mit der Kurzfassung."}
+                yield {"type": "status", "text": "Dieser KI-Server kann nicht selbst nachschauen oder rechnen. "
+                                                 "Ich antworte deshalb nur mit den Daten, die ich schon habe."}
                 continue
             log.warning("KI-Fehler: %s", e)
-            yield {"type": "error", "text": f"Der KI-Server meldet einen Fehler: {e}"}
+            yield {"type": "error", "text": f"Der KI-Server hat einen Fehler gemeldet. Versuch es bitte gleich noch "
+                                            f"einmal. Technische Details: {e}"}
             return
         except requests.RequestException as e:
-            yield {"type": "error", "text": f"KI-Server nicht erreichbar: {type(e).__name__}"}
+            yield {"type": "error", "text": f"Der KI-Server ist gerade nicht erreichbar ({type(e).__name__}). Versuch "
+                                            "es in ein paar Minuten noch einmal. Klappt es dann nicht, sag dem Admin Bescheid."}
             return
         text_all += text
         if not calls:
@@ -633,7 +664,7 @@ def chat(con, profile: dict, message: str, page: str = "") -> Iterator[dict]:
                          "tool_calls": [{"id": k["id"], "type": "function",
                                          "function": {"name": k["name"], "arguments": k["arguments"]}} for k in calls]})
         for k in calls:
-            yield {"type": "status", "text": STATUS.get(k["name"], "Arbeite …")}
+            yield {"type": "status", "text": STATUS.get(k["name"], "Einen Moment …")}
             try:
                 args = json.loads(k["arguments"] or "{}")
             except json.JSONDecodeError:

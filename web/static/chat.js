@@ -76,9 +76,9 @@ part(() => ({
   chatSuggestions() {
     const f = (this.me && this.me.settings.finance) || {};
     if (!f.income && !(f.goals || []).length) {
-      return ["Wie fange ich am besten an?", "Wie viel sollte ich im Monat sparen?", "Welchen Steuersatz habe ich?", "Was ist ein ETF?"];
+      return ["Was ist ein ETF?", "Wie fange ich mit 50 € im Monat an?", "Wie viel sollte ich im Monat sparen?", "Was ist ein Notgroschen?"];
     }
-    return ["Bin ich auf Kurs für meine Ziele?", "Wie lange sollte ich mein Geld anlegen?", "Was bedeutet die Marktlage für mich?", "Wie viel Krypto ist zu viel?"];
+    return ["Schaffe ich meine Ziele?", "Was ist ein Sparplan?", "Wie lange sollte mein Geld liegen bleiben?", "Wie viel Krypto ist zu viel?"];
   },
   pageContext() {
     const r = this.route, parts = [];
@@ -145,10 +145,10 @@ part(() => ({
         }
       }
     } catch (e) {
-      cur.content += (cur.content ? "\n\n" : "") + "⚠️ Verbindung abgebrochen (" + e.message + ").";
+      cur.content += (cur.content ? "\n\n" : "") + "⚠️ Die Verbindung ist abgebrochen (" + e.message + "). Versuch es bitte noch einmal.";
     } finally {
       this.chat.busy = false; this.chat.status = "";
-      if (!cur.content.trim()) cur.content = "⚠️ Keine Antwort erhalten.";
+      if (!cur.content.trim()) cur.content = "⚠️ Keine Antwort bekommen. Versuch es bitte noch einmal.";
       this.$nextTick(() => this.chatScroll());
       if (changed) { await this.refreshMe(); this.ov = null; this.fin = null; if (this.route === "ziele") this.loadFinance(); if (this.route === "ueberblick") this.loadOverview(); }
     }
@@ -156,5 +156,5 @@ part(() => ({
 }));
 
 const FIELD_NAMES = { income: "Einkommen", expenses: "Ausgaben", cash: "Erspartes", debt: "Schulden", saving: "Sparrate",
-  risk: "Risiko", experience: "Erfahrung", age: "Alter", married: "Familienstand", church: "Kirchensteuer", zve: "Steuer-Einkommen",
+  risk: "Risikobereitschaft", experience: "Erfahrung", age: "Alter", married: "Familienstand", church: "Kirchensteuer", zve: "zu versteuerndes Einkommen",
   goals: "Ziele", notes: "Notiz", assets: "Beobachtete Märkte" };

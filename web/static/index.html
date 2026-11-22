@@ -8,11 +8,11 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%235b43c4'/><path d='M7 22l6-7 5 4 7-9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <link rel="stylesheet" href="/static/style.css?v=5">
 <script src="/static/vendor/echarts.min.js"></script>
-<script src="/static/app.js?v=5"></script>
-<script src="/static/pages.js?v=6"></script>
-<script src="/static/calc.js?v=5"></script>
-<script src="/static/charts.js?v=5"></script>
-<script src="/static/chat.js?v=5"></script>
+<script src="/static/app.js?v=6"></script>
+<script src="/static/pages.js?v=7"></script>
+<script src="/static/calc.js?v=6"></script>
+<script src="/static/charts.js?v=6"></script>
+<script src="/static/chat.js?v=6"></script>
 <script defer src="/static/vendor/alpine.min.js"></script>
 </head>
 <body x-data="app()" x-init="init()">
@@ -26,7 +26,7 @@
   </div>
   <div class="card" x-show="!login.creating">
     <h2>Wer bist du?</h2>
-    <p class="ink2">Jedes Profil hat eigene Ziele, einen eigenen Bestand und einen eigenen Telegram-Bericht.</p>
+    <p class="ink2">Jedes Profil hat eigene Ziele, einen eigenen Bestand und einen eigenen Bericht aufs Handy (per Telegram).</p>
     <div class="profiles">
       <template x-for="p in profiles" :key="p.id">
         <button @click="pickProfile(p)" :class="login.sel && login.sel.id === p.id ? 'sel' : ''">
@@ -50,15 +50,16 @@
     <form @submit.prevent="createProfile()">
       <label class="f"><span class="t">Name</span><input x-model="login.name" maxlength="30" placeholder="z. B. Alex" required></label>
       <label class="f"><span class="t">Währung</span>
-        <select x-model="login.currency"><template x-for="(c, k) in meta.currencies" :key="k"><option :value="k" x-text="k + ' – ' + c.name"></option></template></select></label>
+        <select x-model="login.currency"><template x-for="(c, k) in meta.currencies" :key="k"><option :value="k" x-text="k + ' – ' + c.name"></option></template></select>
+        <div class="hint">In dieser Währung zeigt das Tool alle Beträge. Du kannst sie später ändern.</div></label>
       <label class="f"><span class="t">PIN (freiwillig)</span>
         <input type="password" inputmode="numeric" autocomplete="new-password" x-model="login.newpin" placeholder="4–12 Ziffern, leer = ohne PIN">
-        <div class="hint">Ohne PIN kann jeder im Heimnetz dein Profil öffnen.</div></label>
+        <div class="hint">Ein Zahlencode wie beim Handy. Ohne PIN kann jeder in deinem Heimnetz (WLAN zu Hause) dein Profil öffnen.</div></label>
       <div class="err" style="margin-bottom:12px" x-show="login.err" x-text="login.err"></div>
       <div class="row"><button class="primary" type="submit">Profil anlegen</button><button type="button" class="ghost" @click="login.creating = false">Zurück</button></div>
     </form>
   </div>
-  <p class="muted" style="margin-top:18px;font-size:.85rem">Keine Anlageberatung. Alle Prognosen sind Spannen aus der Vergangenheit, keine Garantie.</p>
+  <p class="muted" style="margin-top:18px;font-size:.85rem">Keine Anlageberatung. Alle Prognosen sind Spannen, berechnet aus der Vergangenheit, und keine Garantie.</p>
 </main>
 </template>
 
@@ -95,8 +96,8 @@
             <div class="label">Dein Bestand heute</div>
             <div class="big" x-text="money(ov.portfolio.total)"></div>
             <p class="ink2" style="margin:8px 0 0">
-              <span x-show="ov.portfolio.change['7d']">In 7 Tagen <b :class="cls(ov.portfolio.change['7d'] && ov.portfolio.change['7d'].pct) + '-t'" x-text="pct(ov.portfolio.change['7d'] && ov.portfolio.change['7d'].pct)"></b>.</span>
-              <span x-show="ov.portfolio.gain !== null"> Seit dem Kauf <b :class="cls(ov.portfolio.gain) + '-t'" x-text="signMoney(ov.portfolio.gain)"></b>.</span>
+              <span x-show="ov.portfolio.change['7d']">Letzte 7 Tage: <b :class="cls(ov.portfolio.change['7d'] && ov.portfolio.change['7d'].pct) + '-t'" x-text="pct(ov.portfolio.change['7d'] && ov.portfolio.change['7d'].pct)"></b>.</span>
+              <span x-show="ov.portfolio.gain !== null"> Seit dem Kauf: <b :class="cls(ov.portfolio.gain) + '-t'" x-text="signMoney(ov.portfolio.gain)"></b>.</span>
             </p>
             <div style="margin-top:14px">
               <div class="alloc-bar"><template x-for="a in ov.portfolio.alloc" :key="a.asset"><div :style="'width:' + (a.share * 100) + '%;background:' + col(a.asset)" :title="a.name"></div></template></div>
@@ -109,7 +110,7 @@
           <div>
             <div class="label">Dein Bestand</div>
             <div class="mid" style="margin:4px 0 8px">Du hast noch nichts angelegt</div>
-            <p class="ink2">Kein Problem. Die meisten fangen mit einer kleinen Sparrate an. In 5 kurzen Fragen bekommst du einen ersten Plan.</p>
+            <p class="ink2">Kein Problem, die meisten fangen mit einem kleinen Betrag pro Monat an. In 5 kurzen Fragen bekommst du einen ersten Plan.</p>
             <div class="row"><a class="btn primary" href="#/start">Plan in 5 Fragen</a><a class="btn" href="#/bestand?add=1">Ich habe schon etwas</a></div>
           </div>
         </template>
@@ -132,7 +133,7 @@
     <template x-if="ov.goal">
       <div class="card goal-card section">
         <div class="row between"><div class="label">Dein Ziel</div>
-          <span class="chip" :class="ov.goal.on_track === true ? 'up' : ov.goal.on_track === false ? 'down' : ''" x-text="ov.goal.on_track === true ? 'auf Kurs' : ov.goal.on_track === false ? 'noch nicht auf Kurs' : 'Sparrate fehlt'"></span></div>
+          <span class="chip" :class="ov.goal.on_track === true ? 'up' : ov.goal.on_track === false ? 'down' : ''" x-text="ov.goal.on_track === true ? 'im Plan' : ov.goal.on_track === false ? 'reicht noch nicht' : 'Sparrate fehlt'"></span></div>
         <p style="margin:6px 0 0" x-text="ov.goal.text"></p>
         <a class="more" href="#/ziele" x-text="ov.goal.count > 1 ? 'Alle ' + ov.goal.count + ' Ziele →' : 'Ziel ansehen →'"></a>
       </div>
@@ -140,7 +141,7 @@
 
     <div class="section">
       <div class="row between"><h2 style="margin:0">Deine Märkte</h2><a href="#/maerkte">Alle Märkte →</a></div>
-      <p class="muted" style="font-size:.9rem;margin:4px 0 10px">Preise in deiner Einheit. Die Zahl rechts ist die Veränderung der letzten 7 Tage.</p>
+      <p class="muted" style="font-size:.9rem;margin:4px 0 10px">Aktuelle Kurse (Preise) in deiner Einheit. Die Zahl rechts zeigt die Veränderung der letzten 7 Tage.</p>
       <div class="card list">
         <template x-for="m in ov.markets" :key="m.asset">
           <a class="mrow" :href="'#/maerkte/' + m.asset">
@@ -156,7 +157,7 @@
 
     <div class="section card ask-card" x-show="aiVisible()">
       <h3>Frag den Ratgeber</h3>
-      <p class="ink2" style="font-size:.93rem">Der KI-Ratgeber kennt deinen Bestand, deine Ziele und alle Rechner, und erklärt alles ohne Fachchinesisch.</p>
+      <p class="ink2" style="font-size:.93rem">Der KI-Ratgeber (ein Chat mit künstlicher Intelligenz) kennt deinen Bestand, deine Ziele und alle Rechner. Er erklärt alles in einfachen Worten, kann sich aber irren.</p>
       <div class="chips"><template x-for="q in askChips.ueberblick" :key="q"><button class="small" @click="ask(q)" x-text="q"></button></template></div>
     </div>
   </div>
@@ -180,7 +181,7 @@
 
     <div class="card" x-show="wz.step === 2">
       <h2>Wann brauchst du das Geld?</h2>
-      <p class="ink2">Das ist die wichtigste Frage: Je länger das Geld liegen kann, desto eher darf es zwischendurch schwanken.</p>
+      <p class="ink2">Das ist die wichtigste Frage. Je länger das Geld liegen bleiben kann, desto mehr Auf und Ab verträgt es, weil Zeit zum Erholen bleibt.</p>
       <div class="pick">
         <template x-for="h in horizons" :key="h[0]"><button :class="wz.a.years === h[0] && 'sel'" @click="wz.a.years = h[0]"><b x-text="h[1]"></b><small x-text="h[2]"></small></button></template>
       </div>
@@ -191,38 +192,45 @@
 
     <div class="card" x-show="wz.step === 3">
       <h2>Wie viel kannst du im Monat zur Seite legen?</h2>
-      <label class="f"><span class="t">Betrag pro Monat</span><div class="suffix"><input type="number" min="0" step="25" x-model.number="wz.a.monthly" placeholder="z. B. 100"><span x-text="curSym()"></span></div></label>
+      <label class="f"><span class="t">Betrag pro Monat <button type="button" class="help" @click="toggleHelp('h_wz_monthly')">?</button></span>
+        <div class="help-box" x-show="help.h_wz_monthly">Nur so viel, wie auch in teuren Monaten sicher übrig bleibt. Lieber klein anfangen, etwa mit 50 €, und später erhöhen.</div>
+        <div class="suffix"><input type="number" min="0" step="25" x-model.number="wz.a.monthly" placeholder="z. B. 100"><span x-text="curSym()"></span></div></label>
       <label class="check"><input type="checkbox" x-model="wz.helpIncome"><span>Weiß ich nicht, hilf mir beim Ausrechnen</span></label>
       <div x-show="wz.helpIncome" class="sub-box">
         <div class="grid g2">
-          <label class="f"><span class="t">Netto-Einkommen im Monat</span><div class="suffix"><input type="number" min="0" step="100" x-model.number="wz.a.income"><span x-text="curSym()"></span></div></label>
+          <label class="f"><span class="t">Netto-Einkommen im Monat</span><div class="suffix"><input type="number" min="0" step="100" x-model.number="wz.a.income"><span x-text="curSym()"></span></div>
+            <div class="hint">Was nach Steuern und Abgaben auf dein Konto kommt</div></label>
           <label class="f"><span class="t">Ausgaben im Monat (alles)</span><div class="suffix"><input type="number" min="0" step="100" x-model.number="wz.a.expenses"><span x-text="curSym()"></span></div>
-            <div class="hint">Miete, Strom, Handy, Versicherungen, Essen, Freizeit</div></label>
+            <div class="hint">Miete, Strom, Handy, Versicherungen, Essen, Freizeit. Tipp: Kontoauszüge der letzten 3 Monate ansehen.</div></label>
         </div>
         <template x-if="wz.a.income > 0">
           <div class="ok-box" x-show="wz.a.income - (wz.a.expenses || 0) > 0">
-            <span x-text="'Dir bleiben etwa ' + money(wz.a.income - (wz.a.expenses || 0)) + ' im Monat. Faustregel: rund 20 % vom Netto sparen, also ' + money(suggestSaving()) + '.'"></span>
+            <span x-text="'Dir bleiben etwa ' + money(wz.a.income - (wz.a.expenses || 0)) + ' im Monat. Faustregel: rund 20 % vom Netto-Einkommen sparen, das wären ' + money(suggestSaving()) + '.'"></span>
             <button class="small" style="margin-left:8px" @click="wz.a.monthly = suggestSaving()">Übernehmen</button>
           </div>
         </template>
-        <div class="notice" x-show="wz.a.income > 0 && wz.a.income - (wz.a.expenses || 0) <= 0">Deine Ausgaben sind so hoch wie dein Einkommen. Der erste Schritt ist dann, feste Kosten zu prüfen (Verträge, Abos, Versicherungen).</div>
+        <div class="notice" x-show="wz.a.income > 0 && wz.a.income - (wz.a.expenses || 0) <= 0">Deine Ausgaben sind mindestens so hoch wie dein Einkommen. Dann ist der erste Schritt, feste Kosten zu prüfen (Verträge, Abos, Versicherungen).</div>
       </div>
       <div class="row between"><button class="ghost" @click="wz.step--">Zurück</button><button class="primary" @click="wzNext()">Weiter</button></div>
     </div>
 
     <div class="card" x-show="wz.step === 4">
-      <h2>Dein Polster</h2>
-      <p class="ink2">Bevor du anlegst, brauchst du einen Notgroschen für Überraschungen (Waschmaschine kaputt, Jobwechsel). Faustregel: 3 Monatsausgaben.</p>
-      <label class="f"><span class="t">Wie viel hast du auf Konto/Tagesgeld?</span><div class="suffix"><input type="number" min="0" step="100" x-model.number="wz.a.cash"><span x-text="curSym()"></span></div></label>
+      <h2>Dein Polster für Notfälle</h2>
+      <p class="ink2">Bevor du anlegst, brauchst du einen Notgroschen: etwa 3 Monatsausgaben, jederzeit verfügbar. Er fängt Überraschungen ab, etwa ein kaputtes Auto oder einen Jobverlust.</p>
+      <label class="f"><span class="t">Wie viel hast du auf Konto/Tagesgeld? <button type="button" class="help" @click="toggleHelp('h_wz_cash')">?</button></span>
+        <div class="help-box" x-show="help.h_wz_cash">Zähl Girokonto, Sparbuch und Tagesgeld zusammen. Tagesgeld ist ein Sparkonto mit Zinsen, an das du jederzeit herankommst. Bis 100.000 € pro Bank ist es gesetzlich abgesichert.</div>
+        <div class="suffix"><input type="number" min="0" step="100" x-model.number="wz.a.cash"><span x-text="curSym()"></span></div></label>
       <label class="f" x-show="!wz.a.expenses"><span class="t">Deine Ausgaben im Monat (ungefähr)</span><div class="suffix"><input type="number" min="0" step="100" x-model.number="wz.a.expenses"><span x-text="curSym()"></span></div></label>
-      <label class="f"><span class="t">Teure Schulden (Dispo, Ratenkredit, Kreditkarte)</span><div class="suffix"><input type="number" min="0" step="100" x-model.number="wz.a.debt" placeholder="0"><span x-text="curSym()"></span></div>
-        <div class="hint">Baufinanzierung oder BAföG zählen hier nicht.</div></label>
+      <label class="f"><span class="t">Teure Schulden <button type="button" class="help" @click="toggleHelp('h_wz_debt')">?</button></span>
+        <div class="help-box" x-show="help.h_wz_debt">Gemeint sind das Minus auf dem Girokonto (Dispo), Ratenkredite und offene Kreditkarten-Beträge. Sie kosten oft 10 % Zinsen im Jahr oder mehr. Das ist meist mehr, als eine Anlage bringt, deshalb zahlst du sie zuerst ab.</div>
+        <div class="suffix"><input type="number" min="0" step="100" x-model.number="wz.a.debt" placeholder="0"><span x-text="curSym()"></span></div>
+        <div class="hint">Dispo, Ratenkredit, Kreditkarte. Hauskredit oder BAföG zählen nicht.</div></label>
       <div class="row between"><button class="ghost" @click="wz.step--">Zurück</button><button class="primary" @click="wzNext()">Weiter</button></div>
     </div>
 
     <div class="card" x-show="wz.step === 5">
-      <h2>Stell dir vor: Nach einem Jahr ist dein Geld 30 % weniger wert.</h2>
-      <p class="ink2">Das passiert bei Aktien etwa alle 5 bis 10 Jahre. Was würdest du tun?</p>
+      <h2>Was würdest du tun?</h2>
+      <p class="ink2">Stell dir vor: Aus 10.000 € sind nach einem Jahr nur noch 7.000 € geworden, also 30 % weniger. Bei Aktien (Anteilen an Firmen) passiert das etwa alle 5 bis 10 Jahre.</p>
       <div class="pick one">
         <template x-for="r in reactions" :key="r[0]"><button :class="wz.a.reaction === r[0] && 'sel'" @click="wz.a.reaction = r[0]"><b x-text="r[1]"></b><small x-text="r[2]"></small></button></template>
       </div>
@@ -241,18 +249,19 @@
           <h2 x-text="wz.res.horizon === 'short' ? 'Wo das Geld hin sollte' : 'Eine passende Mischung'"></h2>
           <div class="alloc-bar big-bar"><template x-for="m in wz.res.mix" :key="m.key"><div :style="'width:' + m.pct + '%;background:' + mixCol(m)"></div></template></div>
           <template x-for="m in wz.res.mix" :key="m.key"><div class="mix-row"><i class="dot" :style="'background:' + mixCol(m)"></i><b x-text="m.pct + ' % ' + m.name"></b><span x-text="m.text"></span></div></template>
-          <p class="muted" style="font-size:.85rem;margin-top:10px">Ein Vorschlag nach einfachen Regeln (Zeitraum und wie gut du Schwankungen aushältst), keine Anlageberatung. Welche konkreten ETFs es gibt, findest du unter <a href="#/maerkte">Märkte</a>.</p>
+          <p class="muted" style="font-size:.85rem;margin-top:10px">Ein Vorschlag nach einfachen Regeln: wie lange das Geld liegen kann und wie viel Auf und Ab du aushältst. Keine Anlageberatung. Konkrete ETFs (Körbe mit vielen Aktien) findest du unter <a href="#/maerkte">Märkte</a>.</p>
         </div>
         <div class="card" x-show="wz.res.forecast || wz.res.goal_text">
           <h2>Was daraus werden kann</h2>
           <template x-if="wz.res.forecast">
             <div class="tiles t3">
               <div class="tile"><div class="label">Eingezahlt</div><div class="v" x-text="money(wz.res.forecast.invested)"></div></div>
-              <div class="tile key"><div class="label">Mittlerer Fall</div><div class="v" x-text="money(wz.res.forecast.p50)"></div></div>
-              <div class="tile"><div class="label">Schlechter Fall (1 von 20)</div><div class="v" x-text="money(wz.res.forecast.p5)"></div></div>
+              <div class="tile key"><div class="label">Mittlerer Verlauf</div><div class="v" x-text="money(wz.res.forecast.p50)"></div></div>
+              <div class="tile"><div class="label">Schlechter Verlauf (1 von 20)</div><div class="v" x-text="money(wz.res.forecast.p5)"></div></div>
             </div>
           </template>
           <ul class="sentences"><li x-show="wz.res.forecast" x-text="wz.res.forecast && wz.res.forecast.text"></li><li x-show="wz.res.goal_text" x-text="wz.res.goal_text"></li></ul>
+          <p class="muted" style="font-size:.85rem" x-show="wz.res.forecast">Das Tool hat tausende mögliche Zukünfte durchgespielt. Die Hälfte endet über dem mittleren Verlauf, nur 1 von 20 unter dem schlechten.</p>
         </div>
         <div class="card">
           <h2>Und jetzt?</h2>
@@ -261,7 +270,7 @@
             <a class="btn wide" :href="wzCalcLink()">Im Rechner mit echten Kursen genauer ansehen</a>
             <button class="wide" @click="openPlan(null, { asset: Object.keys(wz.res.weights)[0] || 'MSCIW', amount: wz.res.monthly })" x-show="wz.res.horizon !== 'short'">Ich spare schon so: Sparplan eintragen</button>
             <button class="wide" x-show="aiVisible()" @click="ask('Ich habe gerade den Start-Assistenten gemacht. Was hältst du von dem Plan, und was sollte ich als Erstes konkret tun?')">Mit dem KI-Ratgeber besprechen</button>
-            <button class="ghost" @click="wzReset()">Nochmal von vorn</button>
+            <button class="ghost" @click="wzReset()">Noch mal von vorn</button>
           </div>
         </div>
       </div>
@@ -272,7 +281,7 @@
 <!-- ---------- Mein Bestand ---------- -->
 <section x-show="route === 'bestand'">
   <div class="page-head row between">
-    <div><h1>Mein Bestand</h1><p>Alles, was du schon besitzt: Münzen, Barren, Schmuck, ETF-Anteile, Aktien, Krypto und Sparpläne.</p></div>
+    <div><h1>Mein Bestand</h1><p>Trag ein, was du schon besitzt: Goldmünzen, Schmuck, Aktien (Anteile an Firmen), ETFs (Körbe aus vielen Aktien), Bitcoin oder Sparpläne. Dann siehst du jeden Tag, was alles zusammen wert ist.</p></div>
     <button class="primary" @click="openHolding()" x-show="pf && !pf.empty">+ Hinzufügen</button>
   </div>
   <template x-if="pf && pf.empty">
@@ -283,14 +292,15 @@
         <div class="start-opts">
           <a class="opt" href="#/start"><span class="ic">🧭</span><b>Ich will anfangen</b><span>5 Fragen, dann weißt du, wie viel du wo anlegen könntest.</span></a>
           <button class="opt" @click="openHolding()"><span class="ic">📦</span><b>Ich habe schon etwas</b><span>Goldmünze, Schmuck, ETF, Aktie oder Bitcoin eintragen.</span></button>
-          <button class="opt" @click="openPlan()"><span class="ic">🔁</span><b>Ich habe einen Sparplan</b><span>Monatlicher Betrag seit einem Datum. Die Käufe rechnet das Tool nach.</span></button>
+          <button class="opt" @click="openPlan()"><span class="ic">🔁</span><b>Ich habe einen Sparplan</b><span>Jeden Monat wird automatisch ein fester Betrag angelegt? Das Tool rechnet alle Käufe nach.</span></button>
           <a class="opt" href="#/rechner/past"><span class="ic">⏪</span><b>Erst mal ausprobieren</b><span>Was wäre aus 50 € im Monat seit 2015 geworden?</span></a>
         </div>
       </div>
       <div class="card faq section">
         <h2>Gut zu wissen</h2>
-        <details><summary>Warum sollte ich eintragen, was ich habe?</summary><p>Dann siehst du jeden Tag den Wert, bekommst ihn im Telegram-Bericht und der Ratgeber kann sagen, ob deine Mischung zu deinen Zielen passt.</p></details>
-        <details><summary>Muss ich den Kaufpreis wissen?</summary><p>Nein. Ohne Kaufpreis siehst du den heutigen Wert. Kennst du das Kaufdatum, rechnet das Tool den Wert an diesem Tag aus.</p></details>
+        <details><summary>Warum sollte ich eintragen, was ich habe?</summary><p>Dann siehst du jeden Tag den Wert und bekommst ihn auf Wunsch per Telegram aufs Handy. Der Ratgeber kann dann auch sagen, ob deine Mischung zu deinen Zielen passt.</p></details>
+        <details><summary>Muss ich den Kaufpreis wissen?</summary><p>Nein. Ohne Kaufpreis siehst du den heutigen Wert. Kennst du das Kaufdatum, rechnet das Tool den Wert an diesem Tag aus und zeigt, wie viel du gewonnen oder verloren hast.</p></details>
+        <details><summary>Wo finde ich Stückzahl, Gewicht und Feinheit?</summary><p>Bei Aktien und ETFs steht die Stückzahl in der Depot-Übersicht deiner Bank (Depot = Konto für Aktien und ETFs). Bei Gold und Silber stehen Gewicht und Feinheit meist auf der Rechnung oder als kleiner Stempel auf dem Stück, zum Beispiel „585“.</p></details>
         <details><summary>Wer sieht meine Daten?</summary><p>Nur du (in deinem Profil) und, wenn du ihn nutzt, der KI-Ratgeber. Die Daten liegen auf dem Server zu Hause.</p></details>
       </div>
     </div>
@@ -301,11 +311,11 @@
       <div class="tile key"><div class="label">Wert heute</div><div class="v" x-text="money(pf.total)"></div></div>
       <div class="tile"><div class="label">Bezahlt (wo bekannt)</div><div class="v" x-text="pf.cost_known ? money(pf.cost_known) : '–'"></div></div>
       <div class="tile"><div class="label">Gewinn / Verlust</div><div class="v" :class="cls(pf.gain) + '-t'" x-text="pf.gain !== null ? signMoney(pf.gain) : '–'"></div></div>
-      <div class="tile"><div class="label">Veränderung 7 Tage</div><div class="v" :class="cls(pf.change['7d'] && pf.change['7d'].pct) + '-t'" x-text="pf.change['7d'] ? pct(pf.change['7d'].pct) : '–'"></div></div>
+      <div class="tile"><div class="label">Letzte 7 Tage</div><div class="v" :class="cls(pf.change['7d'] && pf.change['7d'].pct) + '-t'" x-text="pf.change['7d'] ? pct(pf.change['7d'].pct) : '–'"></div></div>
     </div>
     <div class="row" style="margin-top:12px" x-show="aiVisible()"><button class="small" @click="ask('Schau dir meinen Bestand an: Ist er gut gemischt und passt er zu meinen Zielen?')">💬 Ist mein Bestand gut gemischt?</button></div>
     <div class="tabs" style="margin-top:18px">
-      <button :class="pfTab === 'list' && 'sel'" @click="setPfTab('list')">Positionen</button>
+      <button :class="pfTab === 'list' && 'sel'" @click="setPfTab('list')">Deine Anlagen</button>
       <button :class="pfTab === 'history' && 'sel'" @click="setPfTab('history')">Wie hat er sich entwickelt?</button>
     </div>
 
@@ -335,7 +345,7 @@
       </template>
       <div class="card section">
         <div class="row between"><h3 style="margin:0">Sparpläne</h3><button class="small" @click="openPlan()">+ Sparplan</button></div>
-        <p class="ink2" style="margin-top:8px">Ein Sparplan kauft jeden Monat für einen festen Betrag. Das Tool rechnet die Käufe seit dem Start mit dem Kurs am jeweiligen Tag nach.</p>
+        <p class="ink2" style="margin-top:8px">Bei einem Sparplan legt deine Bank jeden Monat automatisch einen festen Betrag an. Das Tool rechnet jeden Kauf mit dem Kurs (Preis) von diesem Tag nach.</p>
         <template x-for="p in pf.plans" :key="p.id">
           <div class="pos">
             <i class="bar" :style="'background:' + col(p.asset)"></i>
@@ -350,19 +360,19 @@
 
     <div x-show="pfTab === 'history'">
       <template x-if="hist && hist.empty">
-        <div class="card"><h3>Noch kein Verlauf</h3><p class="ink2">Für den Verlauf braucht das Tool ein Kaufdatum. Ergänze es bei deinen Positionen oder lege einen Sparplan mit Startdatum an.</p></div>
+        <div class="card"><h3>Noch nichts zu sehen</h3><p class="ink2">Dafür braucht das Tool ein Kaufdatum. Trag es bei deinen Anlagen über „Ändern“ nach oder lege einen Sparplan mit Startdatum an.</p></div>
       </template>
       <template x-if="hist && !hist.empty">
         <div class="card">
           <div class="row between"><h3 style="margin:0">So hat sich dein Bestand entwickelt</h3>
             <div class="seg"><button class="small" :class="histMode === 'total' && 'sel'" @click="histMode = 'total'; drawHistory()">Gesamt</button><button class="small" :class="histMode === 'assets' && 'sel'" @click="histMode = 'assets'; drawHistory()">Nach Anlage</button></div></div>
           <ul class="sentences">
-            <li x-text="'Seit ' + dateStr(hist.start) + ' hast du ' + money(hist.invested_total) + ' investiert. Heute ist es ' + money(hist.final) + ' wert (' + pct(hist.final / hist.invested_total - 1, 0) + ').'"></li>
-            <li x-text="'Der größte Rückgang vom Höchststand: ' + pct(hist.max_dd, 0) + ' (Tiefpunkt ' + dateStr(hist.max_dd_date) + ').'"></li>
-            <li x-show="hist.skipped" x-text="hist.skipped + ' Position(en) ohne Kaufdatum sind nicht enthalten.'"></li>
+            <li x-text="'Seit ' + dateStr(hist.start) + ' hast du ' + money(hist.invested_total) + ' angelegt. Heute ist es ' + money(hist.final) + ' wert (' + pct(hist.final / hist.invested_total - 1, 0) + ').'"></li>
+            <li x-text="'Größter Absturz vom Hoch: ' + pct(hist.max_dd, 0) + ' (am ' + dateStr(hist.max_dd_date) + '). So weit lag der Wert einmal unter seinem bisherigen Höchststand.'"></li>
+            <li x-show="hist.skipped" x-text="hist.skipped + (hist.skipped === 1 ? ' Eintrag ohne Kaufdatum ist' : ' Einträge ohne Kaufdatum sind') + ' nicht enthalten.'"></li>
           </ul>
           <div id="ch-history" class="chart tall"></div>
-          <p class="muted" style="font-size:.85rem">Positionen ohne Kaufpreis zählen mit ihrem Wert am Kaufdatum als „bezahlt“.</p>
+          <p class="muted" style="font-size:.85rem">Einträge ohne Kaufpreis zählen mit ihrem Wert am Kaufdatum als „bezahlt“.</p>
         </div>
       </template>
     </div>
@@ -394,14 +404,24 @@
       <div class="card">
         <h2>Dein Geld im Monat</h2>
         <div class="grid g2">
-          <label class="f"><span class="t">Netto-Einkommen</span><div class="suffix"><input type="number" min="0" step="100" x-model.number="finEdit.income" @input="saveFin()" placeholder="–"><span x-text="curSym()"></span></div></label>
-          <label class="f"><span class="t">Ausgaben (alles)</span><div class="suffix"><input type="number" min="0" step="100" x-model.number="finEdit.expenses" @input="saveFin()" placeholder="–"><span x-text="curSym()"></span></div></label>
-          <label class="f"><span class="t">Sparrate</span><div class="suffix"><input type="number" min="0" step="25" x-model.number="finEdit.saving" @input="saveFin()" placeholder="–"><span x-text="curSym()"></span></div></label>
-          <label class="f"><span class="t">Auf Konto/Tagesgeld</span><div class="suffix"><input type="number" min="0" step="100" x-model.number="finEdit.cash" @input="saveFin()" placeholder="–"><span x-text="curSym()"></span></div></label>
-          <label class="f"><span class="t">Teure Schulden</span><div class="suffix"><input type="number" min="0" step="100" x-model.number="finEdit.debt" @input="saveFin()" placeholder="0"><span x-text="curSym()"></span></div></label>
+          <label class="f"><span class="t">Netto-Einkommen <button type="button" class="help" @click="toggleHelp('h_fin_income')">?</button></span>
+            <div class="help-box" x-show="help.h_fin_income">Was nach Steuern und Sozialabgaben jeden Monat auf deinem Konto ankommt. Spart ihr als Paar gemeinsam, trag Einkommen und Ausgaben von beiden ein.</div>
+            <div class="suffix"><input type="number" min="0" step="100" x-model.number="finEdit.income" @input="saveFin()" placeholder="–"><span x-text="curSym()"></span></div></label>
+          <label class="f"><span class="t">Ausgaben (alles) <button type="button" class="help" @click="toggleHelp('h_fin_exp')">?</button></span>
+            <div class="help-box" x-show="help.h_fin_exp">Alles, was im Monat abgeht: Miete, Strom, Versicherungen, Handy, Essen, Freizeit. Tipp: Nimm den Schnitt deiner Kontoauszüge der letzten 3 Monate. Daraus berechnet das Tool deinen Notgroschen.</div>
+            <div class="suffix"><input type="number" min="0" step="100" x-model.number="finEdit.expenses" @input="saveFin()" placeholder="–"><span x-text="curSym()"></span></div></label>
+          <label class="f"><span class="t">Sparrate <button type="button" class="help" @click="toggleHelp('h_fin_saving')">?</button></span>
+            <div class="help-box" x-show="help.h_fin_saving">So viel legst du jeden Monat zur Seite, zum Beispiel 100 € per Sparplan oder Dauerauftrag.</div>
+            <div class="suffix"><input type="number" min="0" step="25" x-model.number="finEdit.saving" @input="saveFin()" placeholder="–"><span x-text="curSym()"></span></div></label>
+          <label class="f"><span class="t">Auf Konto/Tagesgeld <button type="button" class="help" @click="toggleHelp('h_fin_cash')">?</button></span>
+            <div class="help-box" x-show="help.h_fin_cash">Geld auf Girokonto, Sparbuch und Tagesgeld (Sparkonto mit Zinsen, jederzeit verfügbar). Daran misst das Tool, ob dein Notgroschen reicht.</div>
+            <div class="suffix"><input type="number" min="0" step="100" x-model.number="finEdit.cash" @input="saveFin()" placeholder="–"><span x-text="curSym()"></span></div></label>
+          <label class="f"><span class="t">Teure Schulden <button type="button" class="help" @click="toggleHelp('h_fin_debt')">?</button></span>
+            <div class="help-box" x-show="help.h_fin_debt">Minus auf dem Girokonto (Dispo), Ratenkredite und Kreditkarten-Schulden. Sie kosten meist mehr Zinsen, als eine Anlage bringt. Hauskredit und BAföG zählen nicht.</div>
+            <div class="suffix"><input type="number" min="0" step="100" x-model.number="finEdit.debt" @input="saveFin()" placeholder="0"><span x-text="curSym()"></span></div></label>
         </div>
         <ul class="sentences" style="margin-top:0">
-          <li x-show="fin.free !== null" x-text="'Frei im Monat: ' + money(fin.free) + (finEdit.income ? ' (' + num(fin.free / finEdit.income * 100, 0) + ' % vom Netto).' : '.')"></li>
+          <li x-show="fin.free !== null" x-text="'Frei im Monat: ' + money(fin.free) + (finEdit.income ? ' (' + num(fin.free / finEdit.income * 100, 0) + ' % vom Netto-Einkommen).' : '.')"></li>
           <li x-show="fin.emergency" x-text="'Notgroschen-Ziel (3 Monatsausgaben): ' + money(fin.emergency) + ((finEdit.cash || 0) >= fin.emergency ? ' – erreicht ✓' : ' – es fehlen ' + money(fin.emergency - (finEdit.cash || 0)) + '.')"></li>
         </ul>
         <a class="more" href="#/rechner/budget">Sparrate genauer ausrechnen →</a>
@@ -410,21 +430,26 @@
     <div class="stack">
       <div class="card">
         <h2>Du und Risiko</h2>
-        <span class="t" style="font-weight:600;font-size:.93rem;display:block;margin-bottom:6px">Wie viel Schwankung hältst du aus?</span>
+        <span class="t" style="font-weight:600;font-size:.93rem;display:block;margin-bottom:6px">Wie viel Schwankung hältst du aus? <button type="button" class="help" @click="toggleHelp('h_risk')">?</button></span>
+        <div class="help-box" x-show="help.h_risk">Schwankung heißt: Der Wert geht mal hoch, mal runter. Frag dich, ob du ruhig bleibst, wenn aus 10.000 € für ein paar Monate 7.000 € werden. „Sehr mutig“ heißt starkes Auf und Ab für mehr mögliches Wachstum, „sehr vorsichtig“ kaum Auf und Ab.</div>
         <div class="risk-pick"><template x-for="r in riskLevels" :key="r[0]"><button :class="finEdit.risk === r[0] && 'sel'" @click="finEdit.risk = r[0]; saveFin()"><b x-text="r[0]"></b><small x-text="r[1]"></small></button></template></div>
         <div class="hint" x-text="riskText(finEdit.risk)"></div>
         <div class="grid g2" style="margin-top:12px">
-          <label class="f"><span class="t">Erfahrung</span><select x-model="finEdit.experience" @change="saveFin()"><option value="">–</option><option value="none">keine</option><option value="some">etwas</option><option value="much">viel</option></select></label>
+          <label class="f"><span class="t">Erfahrung mit Geldanlage</span><select x-model="finEdit.experience" @change="saveFin()"><option value="">–</option><option value="none">keine</option><option value="some">etwas</option><option value="much">viel</option></select></label>
           <label class="f"><span class="t">Alter</span><input type="number" min="14" max="110" x-model.number="finEdit.age" @input="saveFin()" placeholder="–"></label>
         </div>
       </div>
       <div class="card">
         <h2>Steuern</h2>
-        <label class="check"><input type="checkbox" x-model="finEdit.married" @change="saveFin()"><span>Verheiratet / zusammen veranlagt <span class="muted">(doppelter Freibetrag)</span></span></label>
-        <label class="f"><span class="t">Kirchensteuer</span><select x-model="finEdit.church" @change="saveFin()"><option value="none">keine</option><option value="8">8 % (Bayern, Baden-Württemberg)</option><option value="9">9 % (andere Länder)</option></select></label>
-        <label class="f"><span class="t">Zu versteuerndes Einkommen im Jahr</span><div class="suffix"><input type="number" min="0" step="1000" x-model.number="finEdit.zve" @input="saveFin()" placeholder="steht im Steuerbescheid"><span x-text="curSym()"></span></div>
+        <label class="check"><input type="checkbox" x-model="finEdit.married" @change="saveFin()"><span>Verheiratet, gemeinsame Steuererklärung <span class="muted">(steuerfreier Gewinn 2.000 € statt 1.000 € im Jahr)</span></span></label>
+        <label class="f"><span class="t">Kirchensteuer <button type="button" class="help" @click="toggleHelp('h_church')">?</button></span>
+          <div class="help-box" x-show="help.h_church">Bist du Mitglied einer Kirche, zahlst du auch auf Gewinne aus Geldanlagen Kirchensteuer. Die Höhe hängt vom Bundesland ab. Auf deiner Lohnabrechnung steht sie als „KiSt“.</div>
+          <select x-model="finEdit.church" @change="saveFin()"><option value="none">keine</option><option value="8">8 % (Bayern, Baden-Württemberg)</option><option value="9">9 % (andere Länder)</option></select></label>
+        <label class="f"><span class="t">Zu versteuerndes Einkommen im Jahr <button type="button" class="help" @click="toggleHelp('h_zve')">?</button></span>
+          <div class="help-box" x-show="help.h_zve">Dein Jahreseinkommen nach allen Abzügen, auf das das Finanzamt die Steuer berechnet. Es steht in deinem letzten Steuerbescheid. Daraus rechnet das Tool deinen persönlichen Steuersatz aus.</div>
+          <div class="suffix"><input type="number" min="0" step="1000" x-model.number="finEdit.zve" @input="saveFin()" placeholder="steht im Steuerbescheid"><span x-text="curSym()"></span></div>
           <div class="hint">Weißt du nicht? <a href="#/rechner/taxrate">Aus dem Bruttogehalt schätzen →</a></div></label>
-        <div class="ok-box" x-show="fin.personal_rate_auto" x-text="'Dein Grenzsteuersatz: ' + num(fin.personal_rate * 100, 1) + ' %. Er wird für Gold, Silber und Krypto genutzt, die du innerhalb eines Jahres verkaufst. Sparerpauschbetrag: ' + money(fin.allowance) + '.'"></div>
+        <div class="ok-box" x-show="fin.personal_rate_auto" x-text="'Dein persönlicher Steuersatz: ' + num(fin.personal_rate * 100, 1) + ' %. So viel Steuer zahlst du auf jeden zusätzlichen Euro, etwa für Gold, Silber und Krypto, die du innerhalb eines Jahres wieder verkaufst. Freibetrag (steuerfreier Gewinn im Jahr): ' + money(fin.allowance) + '.'"></div>
       </div>
       <div class="card">
         <h2>Notizen für den Ratgeber</h2>
@@ -440,7 +465,7 @@
 <section x-show="route === 'rechner'">
   <template x-if="!calcId">
     <div>
-      <div class="page-head"><h1>Rechner</h1><p>Wähle eine Frage. Die Rechner mit „echten Kursen“ spielen tausende mögliche Verläufe durch, die anderen rechnen mit einer festen Annahme, die du selbst einstellst.</p></div>
+      <div class="page-head"><h1>Rechner</h1><p>Wähle eine Frage. Rechner mit „echte Kurse“ spielen tausende mögliche Zukünfte aus vergangenen Kursen durch, die anderen rechnen mit Werten, die du selbst einstellst.</p></div>
       <template x-for="cat in calcCats" :key="cat.id">
         <div class="section" x-show="calcsIn(cat.id).length">
           <h2 x-text="cat.label"></h2>
@@ -527,31 +552,31 @@
               <div class="suffix"><input type="number" min="0" step="1000" x-model.number="calc.goal" @input="recalc()"><span x-text="curSym()"></span></div></label>
           </template>
           <label class="f"><span class="t">Startbetrag <button type="button" class="help" @click="toggleHelp('initial')">?</button></span>
-            <div class="help-box" x-show="help.initial">Geld, das du am Anfang auf einmal anlegst. 0, wenn du nur monatlich sparst.</div>
+            <div class="help-box" x-show="help.initial">Geld, das du am Anfang auf einmal anlegst, zum Beispiel 1.000 € vom Sparbuch. Trag 0 ein, wenn du nur monatlich sparst.</div>
             <div class="suffix"><input type="number" min="0" step="100" x-model.number="calc.initial" @input="recalc()"><span x-text="curSym()"></span></div></label>
           <template x-if="calc.q !== 'past' && pfTotal() > 0">
             <label class="check"><input type="checkbox" x-model="calc.use_holdings" @change="recalc()"><span>Meinen Bestand dazunehmen <span class="muted" x-text="'(' + money(pfTotal()) + ')'"></span></span></label>
           </template>
           <template x-if="calc.q !== 'goal'">
             <label class="f"><span class="t">Sparrate pro Monat <button type="button" class="help" @click="toggleHelp('monthly')">?</button></span>
-              <div class="help-box" x-show="help.monthly">Betrag, den du jeden Monat dazu kaufst. Beim Sparplan kaufst du automatisch mal teuer, mal günstig.</div>
+              <div class="help-box" x-show="help.monthly">Betrag, den du jeden Monat anlegst, zum Beispiel 100 €. Weil du jeden Monat kaufst, erwischst du mal teure, mal günstige Kurse und musst keinen Zeitpunkt abpassen.</div>
               <div class="suffix"><input type="number" min="0" step="25" x-model.number="calc.monthly" @input="recalc()"><span x-text="curSym()"></span></div></label>
           </template>
           <template x-if="calc.q !== 'past'">
             <label class="f"><span class="t">Laufzeit: <span x-text="calc.years + ' Jahre'"></span> <button type="button" class="help" @click="toggleHelp('years')">?</button></span>
-              <div class="help-box" x-show="help.years">Wie lange du das Geld liegen lässt. Je länger, desto eher gleichen sich Schwankungen aus, sicher ist es aber nie.</div>
+              <div class="help-box" x-show="help.years">Wie lange du das Geld liegen lässt. Je länger, desto eher gleichen sich Schwankungen aus, eine Garantie gibt es aber nie.</div>
               <input type="range" min="1" max="40" x-model.number="calc.years" @input="recalc()"></label>
           </template>
           <template x-if="calc.q === 'past'">
             <label class="f"><span class="t">Start <button type="button" class="help" @click="toggleHelp('start')">?</button></span>
-              <div class="help-box" x-show="help.start">Ab wann hättest du angelegt? Gerechnet wird bis zum letzten Börsentag, mit echten Kursen und Wechselkursen.</div>
+              <div class="help-box" x-show="help.start">Ab wann hättest du angelegt? Das Tool rechnet mit echten Kursen bis heute. Preise in Dollar rechnet es mit dem damaligen Wechselkurs in deine Währung um.</div>
               <input type="month" x-model="calc.start" @change="recalc()" min="2000-01">
               <div class="seg" style="margin-top:6px"><template x-for="y in [1, 3, 5, 10, 20]" :key="y"><button type="button" class="small" @click="calc.start = yearsAgo(y); recalc()" x-text="'vor ' + y + ' J.'"></button></template></div></label>
           </template>
 
           <div class="f weights">
             <div class="row between" style="margin-bottom:8px"><span style="font-weight:600;font-size:.93rem">Worin? <button type="button" class="help" @click="toggleHelp('weights')">?</button></span><small x-show="wSum() !== 100 && wSum() > 0" x-text="'Summe ' + wSum() + ' %, wird auf 100 % umgerechnet'"></small></div>
-            <div class="help-box" x-show="help.weights">Worauf verteilst du das Geld? Eine Mischung schwankt meist weniger als eine einzelne Anlage. Mit „+ Anlage“ kannst du jeden Markt aus der Liste dazunehmen.</div>
+            <div class="help-box" x-show="help.weights">Wer streut, also auf mehrere Anlagen verteilt, erlebt meist kleinere Abstürze. Über „+ Anlage hinzufügen“ nimmst du jeden Markt dazu. „Anleihen“ sind Kredite an Staaten mit festen Zinsen, sie schwanken weniger als Aktien.</div>
             <template x-for="a in wKeys()" :key="a">
               <div class="w-row"><b :title="assetName(a)"><i class="dot" :style="'background:' + col(a)"></i><span x-text="shortName(a)"></span></b>
                 <input type="range" min="0" max="100" step="5" x-model.number="calc.weights[a]" @input="recalc()"><output x-text="calc.weights[a] + ' %'"></output>
@@ -565,26 +590,26 @@
               <button type="button" class="small" @click="preset({MSCIW: 100})">Nur Welt-ETF</button>
               <button type="button" class="small" @click="preset({MSCIW: 70, EUGOV: 30})">ETF + Anleihen</button>
               <button type="button" class="small" @click="preset({MSCIW: 80, GOLD: 20})">ETF + Gold</button>
-              <button type="button" class="small" @click="presetWatch()">Meine Märkte gleich</button>
+              <button type="button" class="small" @click="presetWatch()">Meine Märkte gleich verteilt</button>
             </div>
           </div>
 
           <details class="adv">
             <summary>Erweitert: Annahmen, Kosten, Steuern</summary>
             <template x-if="calc.q !== 'past'">
-              <label class="f"><span class="t">Trend-Annahme <button type="button" class="help" @click="toggleHelp('drift')">?</button></span>
-                <div class="help-box" x-show="help.drift">„Vorsichtig“ nimmt weniger Wachstum an als in der Vergangenheit (bei Bitcoin höchstens 15 % im Jahr). „Wie bisher“ überträgt den Durchschnitt der Vergangenheit, das ist bei Bitcoin sehr optimistisch. „Ohne Trend“ zeigt nur die Schwankung.</div>
-                <select x-model="calc.drift" @change="recalc()"><option value="careful">Vorsichtig (empfohlen)</option><option value="historic">Wie in der Vergangenheit</option><option value="none">Ohne Trend, nur Schwankung</option></select></label>
+              <label class="f"><span class="t">Angenommenes Wachstum <button type="button" class="help" @click="toggleHelp('drift')">?</button></span>
+                <div class="help-box" x-show="help.drift">„Vorsichtig“ rechnet mit weniger Wachstum als in der Vergangenheit, bei Bitcoin höchstens 15 % im Jahr. „Wie in der Vergangenheit“ nimmt den alten Durchschnitt, das ist bei Bitcoin sehr optimistisch. „Ohne Wachstum“ zeigt nur das Auf und Ab.</div>
+                <select x-model="calc.drift" @change="recalc()"><option value="careful">Vorsichtig (empfohlen)</option><option value="historic">Wie in der Vergangenheit</option><option value="none">Ohne Wachstum, nur Schwankung</option></select></label>
             </template>
-            <label class="check"><input type="checkbox" x-model="calc.costs" @change="recalc()"><span>Kosten berücksichtigen <span class="muted">(Kaufgebühr, Spanne An-/Verkauf, Lagerkosten)</span></span></label>
+            <label class="check"><input type="checkbox" x-model="calc.costs" @change="recalc()"><span>Kosten berücksichtigen <span class="muted">(Gebühren, Preisabschlag beim Verkauf, laufende Kosten)</span></span></label>
             <label class="check" x-show="calc.q !== 'goal'"><input type="checkbox" x-model="calc.tax" @change="recalc()"><span>Steuern berücksichtigen <span class="muted" x-text="'(' + taxName() + ')'"></span></span></label>
-            <label class="check" x-show="calc.q === 'future'"><input type="checkbox" x-model="calc.inflation" @change="recalc()"><span>Kaufkraft zeigen <span class="muted">(Inflation)</span></span></label>
-            <label class="f" x-show="calc.q !== 'goal'" style="margin-top:8px"><span class="t">Aufteilung wiederherstellen <button type="button" class="help" @click="toggleHelp('rebalance')">?</button></span>
-              <div class="help-box" x-show="help.rebalance">Einmal im Jahr wird umgeschichtet, damit die Aufteilung wieder stimmt. Das verkauft, was gut lief, und kauft, was schlecht lief.</div>
-              <select x-model="calc.rebalance" @change="recalc()"><option value="none">Nein</option><option value="yearly">Jährlich</option><option value="quarterly">Vierteljährlich</option></select></label>
+            <label class="check" x-show="calc.q === 'future'"><input type="checkbox" x-model="calc.inflation" @change="recalc()"><span>In heutigem Geld zeigen <span class="muted">(Preissteigerung herausgerechnet)</span></span></label>
+            <label class="f" x-show="calc.q !== 'goal'" style="margin-top:8px"><span class="t">Umschichten <button type="button" class="help" @click="toggleHelp('rebalance')">?</button></span>
+              <div class="help-box" x-show="help.rebalance">Mit der Zeit verschiebt sich deine Mischung, weil eine Anlage stärker steigt als die andere. Beim Umschichten verkauft das Tool etwas vom Gewinner und kauft vom Rest nach, bis die geplante Mischung wieder stimmt.</div>
+              <select x-model="calc.rebalance" @change="recalc()"><option value="none">Nie</option><option value="yearly">Einmal im Jahr</option><option value="quarterly">Alle 3 Monate</option></select></label>
             <template x-if="calc.q === 'future'">
               <label class="f"><span class="t">Später monatlich entnehmen <button type="button" class="help" @click="toggleHelp('withdraw')">?</button></span>
-                <div class="help-box" x-show="help.withdraw">Zum Beispiel als Zusatzrente: ab einem bestimmten Jahr jeden Monat einen festen Betrag herausnehmen.</div>
+                <div class="help-box" x-show="help.withdraw">Zum Beispiel als Zusatzrente. Erstes Feld: wie viel du jeden Monat herausnimmst. Zweites Feld: ab welchem Jahr.</div>
                 <div class="grid g2"><div class="suffix"><input type="number" min="0" step="50" x-model.number="calc.wd_monthly" @input="recalc()"><span x-text="curSym()"></span></div>
                   <div class="suffix"><input type="number" min="1" max="40" x-model.number="calc.wd_from" @input="recalc()"><span>Jahr</span></div></div></label>
             </template>
@@ -597,26 +622,26 @@
           <template x-if="res && res.q === 'future' && calc.q === 'future'">
             <div class="card">
               <div class="tiles">
-                <div class="tile"><div class="label">Eingesetzt</div><div class="v" x-text="money(res.invested)"></div></div>
-                <div class="tile key"><div class="label" x-text="'Mittlerer Fall' + (res.net_label ? ' (' + res.net_label + ')' : '')"></div><div class="v" x-text="money(res.end['50'])"></div></div>
-                <div class="tile"><div class="label">Schlechter Fall (1 von 20)</div><div class="v" x-text="money(res.end['5'])"></div></div>
-                <div class="tile"><div class="label">Chance auf Verlust</div><div class="v" x-text="num(res.p_loss * 100, 0) + ' %'"></div></div>
+                <div class="tile"><div class="label">Eingezahlt</div><div class="v" x-text="money(res.invested)"></div></div>
+                <div class="tile key"><div class="label" x-text="'Mittlerer Verlauf' + (res.net_label ? ' (' + res.net_label + ')' : '')"></div><div class="v" x-text="money(res.end['50'])"></div></div>
+                <div class="tile"><div class="label">Schlechter Verlauf (1 von 20)</div><div class="v" x-text="money(res.end['5'])"></div></div>
+                <div class="tile"><div class="label">Risiko für Verlust</div><div class="v" x-text="num(res.p_loss * 100, 0) + ' %'"></div></div>
               </div>
               <ul class="sentences"><template x-for="t in res.text"><li x-text="t"></li></template></ul>
               <div class="row between section" style="margin-top:18px">
-                <h3 style="margin:0" x-text="'Dein Depot in ' + res.years + ' Jahren'"></h3>
+                <h3 style="margin:0" x-text="'Dein Geld in ' + res.years + ' Jahren'"></h3>
                 <div class="seg"><button class="small" :class="futView === 'fan' && 'sel'" @click="futView = 'fan'; drawCalc()">Spanne</button><button class="small" :class="futView === 'bars' && 'sel'" @click="futView = 'bars'; drawCalc()">Jahresbalken</button></div>
               </div>
               <div id="ch-calc" class="chart tall"></div>
-              <p class="muted" style="font-size:.85rem" x-show="futView === 'fan'" x-text="fanNote + (res.net_label ? ' Das Diagramm zeigt den Depotwert vor dem Verkauf.' : '')"></p>
-              <p class="muted" style="font-size:.85rem" x-show="futView === 'bars'">Balken = mittlerer Fall. Grau ist, was du eingezahlt hast, violett der Zuwachs.</p>
+              <p class="muted" style="font-size:.85rem" x-show="futView === 'fan'" x-text="fanNote + (res.net_label ? ' Das Diagramm zeigt den Wert vor dem Verkauf.' : '')"></p>
+              <p class="muted" style="font-size:.85rem" x-show="futView === 'bars'">Balken = mittlerer Verlauf. Grau ist, was du eingezahlt hast, violett der Wertzuwachs.</p>
               <template x-if="res.stress"><div class="notice" style="margin-top:12px"><b>Härtetest:</b> <span x-text="stressText()"></span></div></template>
               <template x-if="res.ran_out_share !== null && res.ran_out_share !== undefined">
-                <div class="notice" style="margin-top:12px" x-text="'Entnahme: In ' + num(res.ran_out_share * 100, 0) + ' % der Fälle ist das Geld vor dem Ende aufgebraucht.'"></div>
+                <div class="notice" style="margin-top:12px" x-text="'Entnahme: In ' + num(res.ran_out_share * 100, 0) + ' % der Verläufe ist das Geld vor dem Ende aufgebraucht.'"></div>
               </template>
-              <div class="row section" x-show="aiVisible()"><button class="small" @click="ask('Erklär mir bitte dieses Ergebnis in einfachen Worten: Was heißt die Spanne, und ist die Aufteilung für mich sinnvoll?')">💬 Erklär mir das</button></div>
+              <div class="row section" x-show="aiVisible()"><button class="small" @click="ask('Erklär mir bitte dieses Ergebnis in einfachen Worten: Was heißt die Spanne, und ist die Mischung für mich sinnvoll?')">💬 Erklär mir das</button></div>
               <details class="section"><summary style="cursor:pointer;font-weight:600">Jahr für Jahr</summary>
-                <div class="table-wrap"><table class="t"><thead><tr><th>Jahr</th><th>Eingesetzt</th><th>Schlecht (1 von 20)</th><th>Mittel</th><th>Gut (1 von 20)</th></tr></thead>
+                <div class="table-wrap"><table class="t"><thead><tr><th>Jahr</th><th>Eingezahlt</th><th>Schlecht (1 von 20)</th><th>Mittel</th><th>Gut (1 von 20)</th></tr></thead>
                   <tbody><template x-for="r in res.rows" :key="r.year"><tr><td x-text="r.year"></td><td x-text="money(r.invested)"></td><td x-text="money(r.p5)"></td><td><b x-text="money(r.p50)"></b></td><td x-text="money(r.p95)"></td></tr></template></tbody></table></div>
               </details>
               <p class="muted" style="font-size:.82rem;margin-top:12px" x-text="assumptionText()"></p>
@@ -625,15 +650,15 @@
           <template x-if="res && res.q === 'goal' && calc.q === 'goal'">
             <div class="card">
               <div class="tiles">
-                <div class="tile key"><div class="label">Mittlerer Fall</div><div class="v" x-text="money(res.monthly_50) + ' /Monat'"></div></div>
+                <div class="tile key"><div class="label">Mittlerer Verlauf</div><div class="v" x-text="money(res.monthly_50) + ' /Monat'"></div></div>
                 <div class="tile"><div class="label">Sicherer (3 von 4)</div><div class="v" x-text="money(res.monthly_75) + ' /Monat'"></div></div>
                 <div class="tile"><div class="label">Sehr sicher (9 von 10)</div><div class="v" x-text="money(res.monthly_90) + ' /Monat'"></div></div>
                 <div class="tile"><div class="label">Ohne Anlage</div><div class="v" x-text="money(res.no_risk) + ' /Monat'"></div></div>
               </div>
               <ul class="sentences"><template x-for="t in res.text"><li x-text="t"></li></template></ul>
-              <p class="ink2 section">Tipp: Nimm die Rate aus „Mittlerer Fall“ und prüfe sie unter <a :href="goalToFutureLink()">„Was könnte daraus werden?“</a>, dann siehst du die ganze Spanne.</p>
+              <p class="ink2 section">„3 von 4“ heißt: Mit dieser Rate erreichst du dein Ziel in 3 von 4 durchgespielten Verläufen. Tipp: Nimm die Rate aus „Mittlerer Verlauf“ und prüfe sie unter <a :href="goalToFutureLink()">„Was könnte daraus werden?“</a>, dann siehst du die ganze Spanne.</p>
               <div class="row" x-show="aiVisible()"><button class="small" @click="ask('Erklär mir bitte dieses Ergebnis: Welche Sparrate sollte ich wählen?')">💬 Erklär mir das</button></div>
-              <p class="muted" style="font-size:.82rem" x-text="'Annahmen: Trend ' + res.assumptions.drift + ', ' + (res.assumptions.costs ? 'mit Kosten' : 'ohne Kosten') + ', vor Steuern, ' + res.assumptions.n_sims + ' durchgespielte Verläufe aus echten Kursen seit ' + dateStr(res.assumptions.history_from) + '.'"></p>
+              <p class="muted" style="font-size:.82rem" x-text="'Annahmen: Wachstum ' + res.assumptions.drift + ', ' + (res.assumptions.costs ? 'mit Kosten' : 'ohne Kosten') + ', vor Steuern, ' + res.assumptions.n_sims + ' durchgespielte Verläufe aus echten Kursen seit ' + dateStr(res.assumptions.history_from) + '.'"></p>
             </div>
           </template>
           <template x-if="res && res.q === 'past' && calc.q === 'past'">
@@ -643,12 +668,12 @@
                 <div class="tile"><div class="label">Eingezahlt</div><div class="v" x-text="money(res.invested)"></div></div>
                 <div class="tile key"><div class="label" x-text="'Wert heute' + (res.net_label ? ' (' + res.net_label + ')' : '')"></div><div class="v" x-text="money(res.final)"></div></div>
                 <div class="tile"><div class="label">Gewinn / Verlust</div><div class="v" :class="cls(res.final - res.invested) + '-t'" x-text="signMoney(res.final - res.invested)"></div></div>
-                <div class="tile"><div class="label">Größter Rückgang</div><div class="v down-t" x-text="pct(res.max_dd, 0)"></div></div>
+                <div class="tile"><div class="label">Größter Absturz vom Hoch</div><div class="v down-t" x-text="pct(res.max_dd, 0)"></div></div>
               </div>
               <ul class="sentences"><template x-for="t in res.text"><li x-text="t"></li></template></ul>
-              <h3 class="section">Verlauf</h3>
+              <h3 class="section">So hat sich der Wert entwickelt</h3>
               <div id="ch-calc" class="chart tall"></div>
-              <p class="muted" style="font-size:.85rem" x-show="res.net_label">Das Diagramm zeigt den Depotwert vor dem Verkauf, die Kacheln oben den Erlös <span x-text="res.net_label"></span>.</p>
+              <p class="muted" style="font-size:.85rem" x-show="res.net_label">Das Diagramm zeigt den Wert vor dem Verkauf, die Kacheln oben, was <span x-text="res.net_label"></span> übrig bleibt.</p>
               <h3 class="section">Zum Vergleich: alles in eine Anlage</h3>
               <p class="ink2" style="font-size:.93rem">Gleiche Einzahlungen, gleicher Zeitraum.</p>
               <div id="ch-compare" class="chart small"></div>
@@ -657,7 +682,7 @@
                 <div class="table-wrap"><table class="t"><thead><tr><th>Zeitpunkt</th><th>Eingezahlt</th><th>Wert</th><th>Gewinn</th></tr></thead>
                   <tbody><template x-for="r in res.rows" :key="r.date"><tr><td x-text="r.label"></td><td x-text="money(r.invested)"></td><td><b x-text="money(r.value)"></b></td><td :class="cls(r.value - r.invested) + '-t'" x-text="signMoney(r.value - r.invested)"></td></tr></template></tbody></table></div>
               </details>
-              <p class="muted" style="font-size:.82rem;margin-top:12px" x-text="'Annahmen: ' + (res.assumptions.costs ? 'mit Kosten' : 'ohne Kosten') + ', ' + res.assumptions.tax + (res.assumptions.fx ? ', mit echten Wechselkursen' : '') + '. Kauf jeweils zum Tagesschlusskurs.'"></p>
+              <p class="muted" style="font-size:.82rem;margin-top:12px" x-text="'Annahmen: ' + (res.assumptions.costs ? 'mit Kosten' : 'ohne Kosten') + ', ' + res.assumptions.tax + (res.assumptions.fx ? ', mit echten Wechselkursen' : '') + '. Gekauft wird jeweils zum letzten Kurs des Tages.'"></p>
             </div>
           </template>
         </div>
@@ -666,10 +691,10 @@
 
       <div class="section card faq" x-show="calcDef.ui === 'custom'">
         <h2>So funktioniert der Rechner</h2>
-        <details><summary>Woher kommen die Zahlen für die Zukunft?</summary><p>Das Tool spielt einige tausend mögliche Verläufe durch. Jeder Verlauf besteht aus echten 20-Tage-Abschnitten der Vergangenheit, zufällig aneinandergereiht und für alle Anlagen mit denselben Tagen. So bleiben echte Krisen, echte Erholungen und der Zusammenhang zwischen den Anlagen erhalten.</p></details>
-        <details><summary>Was bedeuten „mittlerer Fall“ und „1 von 20“?</summary><p>Sortiert man alle durchgespielten Verläufe nach dem Ergebnis, liegt der mittlere Fall genau in der Mitte. „Schlechter Fall (1 von 20)“ heißt: Nur jeder zwanzigste Verlauf war noch schlechter.</p></details>
-        <details><summary>Stimmen diese Spannen?</summary><p>Das Tool prüft sich jede Nacht selbst: Es tut so, als stünde es an einem Tag in der Vergangenheit, rechnet die Spanne aus und vergleicht mit dem, was danach wirklich passierte. Details unter <a href="#/methodik">Methodik</a>.</p></details>
-        <details><summary>Kann das Tool sagen, ob es morgen hoch oder runter geht?</summary><p>Nein. Kein getestetes Modell sagt die Richtung nach Gebühren besser voraus als die simple Annahme „steigt langfristig“. Deshalb gibt es hier Spannen statt Kursziele.</p></details>
+        <details><summary>Woher kommen die Zahlen für die Zukunft?</summary><p>Das Tool spielt einige tausend mögliche Zukünfte durch. Dafür schneidet es die echten Kurse der Vergangenheit in Stücke von je 20 Börsentagen (etwa ein Monat) und setzt sie zufällig neu zusammen, für alle Anlagen mit denselben Tagen. So stecken echte Krisen und Erholungen drin, und was früher gemeinsam fiel, fällt auch hier gemeinsam.</p></details>
+        <details><summary>Was heißen „mittlerer Verlauf“ und „1 von 20“?</summary><p>Stell dir alle durchgespielten Verläufe sortiert vor, vom schlechtesten bis zum besten. Der mittlere Verlauf steht genau in der Mitte: Die Hälfte lief besser, die Hälfte schlechter. „Schlechter Verlauf (1 von 20)“ heißt: Nur jeder zwanzigste Verlauf endete noch schlechter.</p></details>
+        <details><summary>Stimmen diese Spannen?</summary><p>Das Tool prüft sich jede Nacht selbst. Es tut so, als stünde es an einem Tag in der Vergangenheit, rechnet die Spanne aus und vergleicht sie mit dem, was danach wirklich passiert ist. Die Ergebnisse zeigt die Seite <a href="#/methodik">„Wie rechnet das Tool?“</a>.</p></details>
+        <details><summary>Kann das Tool sagen, ob es morgen hoch oder runter geht?</summary><p>Nein. Das Tool hat mehrere Rechenmodelle getestet, keines sagte die Richtung nach Abzug der Gebühren besser voraus als die einfache Annahme „steigt langfristig“. Deshalb zeigt es Spannen statt fester Zielpreise.</p></details>
       </div>
     </div>
   </template>
@@ -677,9 +702,9 @@
 
 <!-- ---------- Märkte: Liste ---------- -->
 <section x-show="route === 'maerkte' && !mkAsset">
-  <div class="page-head"><h1>Märkte</h1><p>Alles, was du beobachten, eintragen oder durchrechnen kannst. Mit dem Stern ☆ kommt ein Markt auf deinen Überblick und in deinen Bericht.</p></div>
+  <div class="page-head"><h1>Märkte</h1><p>Hier findest du jede Anlage mit ihrem aktuellen Kurs (Preis): Gold, Aktien, ETFs, Bitcoin und mehr. Mit dem Stern ☆ kommt sie auf deinen Überblick und in deinen Bericht.</p></div>
   <div class="mk-tools">
-    <input type="search" placeholder="Suchen: Name, Kürzel oder ISIN" x-model="mkq" @input="mkSearchClear()">
+    <input type="search" placeholder="Suchen: Name oder Kürzel" x-model="mkq" @input="mkSearchClear()">
     <div class="tabs" style="margin:0"><button class="small" :class="mkKind === '' && 'sel'" @click="mkKind = ''">Alle</button>
       <button class="small" :class="mkKind === 'watch' && 'sel'" @click="mkKind = 'watch'">☆ Meine</button>
       <template x-for="k in mkKinds" :key="k.id"><button class="small" :class="mkKind === k.id && 'sel'" @click="mkKind = k.id" x-text="k.label" x-show="mkCount(k.id)"></button></template></div>
@@ -697,7 +722,7 @@
   </div>
   <div class="card section">
     <h3>Nicht dabei?</h3>
-    <p class="ink2" style="font-size:.93rem">Suche nach jeder Aktie, jedem ETF, Fonds oder Coin (Name, Kürzel oder ISIN). Das Tool lädt dann die ganze Kurshistorie.</p>
+    <p class="ink2" style="font-size:.93rem">Such nach jeder Aktie, jedem ETF, Fonds oder Coin (digitales Geld wie Bitcoin). Am genauesten triffst du mit der ISIN, der 12-stelligen Kennnummer auf deinen Bank-Unterlagen. Das Tool lädt dann alle früheren Kurse.</p>
     <form class="row" @submit.prevent="mkSearch()"><input type="search" x-model="mkq2" placeholder="z. B. Vanguard, Novo Nordisk, IE00B4L5Y983" style="flex:1;min-width:200px"><button class="primary" type="submit" :disabled="mkBusy">Suchen</button></form>
     <div class="busy" x-show="mkBusy" x-text="mkBusyText"></div>
     <template x-for="r in mkResults" :key="r.symbol">
@@ -707,7 +732,7 @@
         <div><a class="btn small" x-show="r.known" :href="'#/maerkte/' + r.id">Öffnen</a><button class="small primary" x-show="!r.known" :disabled="mkBusy" @click="mkAdd(r)">Hinzufügen</button></div>
       </div>
     </template>
-    <div class="muted" x-show="mkSearched && !mkResults.length && !mkBusy">Keine Treffer. Tipp: Versuch das Kürzel mit Börse, z. B. „SAP.DE“.</div>
+    <div class="muted" x-show="mkSearched && !mkResults.length && !mkBusy">Keine Treffer. Tipp: Versuch das Kürzel mit Börsen-Endung, z. B. „SAP.DE“ für SAP in Deutschland.</div>
   </div>
 </section>
 
@@ -729,16 +754,16 @@
         <div class="seg"><template x-for="r in ranges" :key="r[0]"><button class="small" :class="mkRange === r[0] && 'sel'" @click="mkRange = r[0]; loadMarket()" x-text="r[1]"></button></template></div>
       </div>
       <div id="ch-market" class="chart tall" style="margin-top:10px"></div>
-      <div class="row between"><label class="check" x-show="mk.ma200"><input type="checkbox" x-model="showMa" @change="drawMarket()"><span>200-Tage-Linie zeigen <span class="muted">(Durchschnitt der letzten 200 Tage, zeigt den groben Trend)</span></span></label>
+      <div class="row between"><label class="check" x-show="mk.ma200"><input type="checkbox" x-model="showMa" @change="drawMarket()"><span>200-Tage-Linie zeigen <span class="muted">(Durchschnittskurs der letzten 200 Tage, zeigt die grobe Richtung)</span></span></label>
         <small x-text="'Im Zeitraum: ' + pct(mk.change) + ' · Hoch ' + money(mk.high) + ' · Tief ' + money(mk.low)"></small></div>
     </div>
     <div class="grid g2 section">
       <div class="card"><h3>In einfachen Worten</h3><ul class="sentences" style="margin-top:4px"><template x-for="s in mk.story"><li x-text="s"></li></template></ul>
         <p class="ink2" style="margin-top:12px;font-size:.93rem" x-show="corrText()" x-text="corrText()"></p></div>
       <div class="card"><h3>Die größten Abstürze</h3>
-        <div class="table-wrap"><table class="t"><thead><tr><th>Vom Hoch</th><th>Rückgang</th><th>Dauer bis Tief</th><th>Wieder erholt</th></tr></thead>
+        <div class="table-wrap"><table class="t"><thead><tr><th>Höchststand am</th><th>Absturz</th><th>Dauer bis Tief</th><th>Wieder erholt</th></tr></thead>
           <tbody><template x-for="d in mk.drawdowns" :key="d.peak"><tr><td x-text="dateStr(d.peak)"></td><td class="down-t" x-text="pct(d.depth, 0)"></td><td x-text="d.months_down + ' Monate'"></td><td x-text="d.recovered ? 'nach ' + d.months_back + ' Monaten' : 'noch nicht'"></td></tr></template></tbody></table></div>
-        <p class="muted" style="font-size:.85rem;margin-top:8px">Wer anlegt, sollte solche Phasen aushalten können, ohne verkaufen zu müssen.</p></div>
+        <p class="muted" style="font-size:.85rem;margin-top:8px">„Wieder erholt“ heißt: Der Kurs war wieder so hoch wie vorher. Wer anlegt, sollte solche Phasen aushalten können, ohne verkaufen zu müssen.</p></div>
     </div>
     <div class="card section"><h3>Gute und schlechte Jahre</h3><p class="ink2" style="font-size:.93rem" x-text="yearsText()"></p><div id="ch-years" class="chart small"></div></div>
     <div class="row section">
@@ -762,8 +787,10 @@
         <span class="t" style="font-weight:600;font-size:.93rem;display:block;margin-bottom:6px">Edelmetalle: Preis anzeigen pro</span>
         <template x-for="(key, a) in meta.metals" :key="a">
           <div class="grid g2 metal-row">
-            <label class="f"><span class="t" x-text="assetName(a)"></span><select x-model="st[key].unit" @change="saveSettings()"><option value="g">Gramm</option><option value="oz">Unze</option><option value="kg">Kilo</option></select></label>
-            <label class="f"><span class="t">Feinheit</span><select x-model.number="st[key].fineness" @change="saveSettings()"><template x-for="f in meta.fineness[a]" :key="f.value"><option :value="f.value" x-text="f.label" :selected="f.value == st[key].fineness"></option></template></select></label>
+            <label class="f"><span class="t" x-text="assetName(a)"></span><select x-model="st[key].unit" @change="saveSettings()"><option value="g">Gramm</option><option value="oz">Feinunze (31,1 g)</option><option value="kg">Kilo</option></select></label>
+            <label class="f"><span class="t">Feinheit <button type="button" class="help" @click="toggleHelp('h_fine_' + a)">?</button></span>
+              <div class="help-box" x-show="help['h_fine_' + a]">Wie viel Tausendstel reines Metall drin sind: 999 ist fast rein, 585 heißt 58,5 % Gold. Der Preis wird dann für diese Feinheit angezeigt, praktisch bei Schmuck.</div>
+              <select x-model.number="st[key].fineness" @change="saveSettings()"><template x-for="f in meta.fineness[a]" :key="f.value"><option :value="f.value" x-text="f.label" :selected="f.value == st[key].fineness"></option></template></select></label>
           </div>
         </template>
         <div class="hint" style="margin:-6px 0 12px" x-text="'Beispiel: Gold wird angezeigt als „' + unitExample('GOLD') + '“.'"></div>
@@ -771,10 +798,14 @@
       </div>
       <div class="card">
         <h2>Rechnen</h2>
-        <label class="f"><span class="t">Inflation für</span><select x-model="st.inflation_geo" @change="saveSettings()"><template x-for="(n, k) in meta.geos" :key="k"><option :value="k" x-text="n" :selected="k === st.inflation_geo"></option></template></select></label>
-        <label class="f"><span class="t">Steuern</span><select x-model="st.tax" @change="saveSettings()"><option value="de">Deutschland (vereinfacht)</option><option value="none">Keine (z. B. Schweiz, privat)</option><option value="flat">Pauschal auf Gewinne</option></select></label>
+        <label class="f"><span class="t">Inflation für <button type="button" class="help" @click="toggleHelp('h_infl')">?</button></span>
+          <div class="help-box" x-show="help.h_infl">Inflation heißt: Preise steigen, dasselbe Geld kauft später weniger. Wähle, wo du lebst. Damit rechnet das Tool Beträge in heutiges Geld um.</div>
+          <select x-model="st.inflation_geo" @change="saveSettings()"><template x-for="(n, k) in meta.geos" :key="k"><option :value="k" x-text="n" :selected="k === st.inflation_geo"></option></template></select></label>
+        <label class="f"><span class="t">Steuern <button type="button" class="help" @click="toggleHelp('h_tax')">?</button></span>
+          <div class="help-box" x-show="help.h_tax">Deutschland: Auf Gewinne aus Geldanlagen gehen rund 26 % Abgeltungsteuer, 1.000 € Gewinn im Jahr bleiben steuerfrei (Freibetrag). „Pauschal“ zieht von jedem Gewinn einen festen Prozentsatz ab, den du selbst einträgst.</div>
+          <select x-model="st.tax" @change="saveSettings()"><option value="de">Deutschland (vereinfacht)</option><option value="none">Keine (z. B. Schweiz, privat)</option><option value="flat">Pauschal auf Gewinne</option></select></label>
         <label class="f" x-show="st.tax === 'de'"><span class="t">Persönlicher Steuersatz <button type="button" class="help" @click="toggleHelp('ptax')">?</button></span>
-          <div class="help-box" x-show="help.ptax">Gilt für Gold, Silber und Krypto, die du innerhalb eines Jahres wieder verkaufst (Gewinn ab 1.000 €). Danach ist der Gewinn in Deutschland steuerfrei. Trägst du unter „Ziele“ dein zu versteuerndes Einkommen ein, wird er automatisch berechnet.</div>
+          <div class="help-box" x-show="help.ptax">Gilt für Gold, Silber und Krypto, die du innerhalb eines Jahres mit Gewinn verkaufst (ab 1.000 € Gewinn im Jahr), nach einem Jahr ist der Gewinn steuerfrei. Bei normalem Einkommen sind es meist 25–42 %. Trägst du unter „Ziele“ dein zu versteuerndes Einkommen ein, rechnet das Tool den Satz selbst aus.</div>
           <div class="suffix"><input type="number" min="0" max="60" step="1" :value="Math.round(st.personal_rate * 100)" @change="st.personal_rate = $event.target.value / 100; saveSettings()" :disabled="st.personal_rate_auto"><span>%</span></div>
           <div class="hint" x-show="st.personal_rate_auto">Aus deinem Finanzprofil berechnet. <a href="#/ziele">Ändern unter Ziele →</a></div></label>
         <label class="f" x-show="st.tax === 'flat'"><span class="t">Pauschalsatz</span>
@@ -784,30 +815,38 @@
         <h2>KI-Ratgeber</h2>
         <template x-if="ai">
         <div>
-          <div :class="ai.effective.ready ? 'ok-box' : 'notice'" style="margin-bottom:12px" x-text="ai.effective.ready ? '✓ Bereit: ' + ai.effective.model + (ai.effective.local ? ' (im Heimnetz)' : ' (externer Server)') : ai.effective.reason"></div>
+          <div :class="ai.effective.ready ? 'ok-box' : 'notice'" style="margin-bottom:12px" x-text="ai.effective.ready ? '✓ Bereit: ' + ai.effective.model + (ai.effective.local ? ' (läuft bei dir zu Hause)' : ' (externer Anbieter im Internet)') : ai.effective.reason"></div>
           <label class="check"><input type="checkbox" x-model="aiOwn.enabled" @change="saveAiOwn()"><span>Ratgeber anzeigen</span></label>
-          <label class="f"><span class="t">Welcher KI-Zugang?</span>
+          <label class="f"><span class="t">Welcher KI-Zugang? <button type="button" class="help" @click="toggleHelp('h_aimode')">?</button></span>
+            <div class="help-box" x-show="help.h_aimode">„Gemeinsam“ nutzt den Zugang, den der Admin (wer das Tool zu Hause betreut) für alle Profile eingerichtet hat. Einen eigenen Zugang brauchst du nur, wenn du selbst ein Konto bei einem KI-Anbieter hast.</div>
             <select x-model="aiOwn.mode" @change="saveAiOwn()"><option value="global">Gemeinsamer Zugang (vom Admin eingerichtet)</option><option value="own">Eigener Zugang</option></select></label>
           <template x-if="aiOwn.mode === 'own'">
             <div class="sub-box">
-              <label class="f"><span class="t">Adresse (OpenAI-kompatibel)</span><input x-model="aiOwn.base_url" placeholder="https://api.openai.com/v1 oder http://192.168.178.62:8000/v1"></label>
+              <label class="f"><span class="t">Server-Adresse</span><input x-model="aiOwn.base_url" placeholder="https://api.openai.com/v1 oder http://192.168.178.62:8000/v1">
+                <div class="hint">Adresse eines Dienstes mit OpenAI-kompatibler Schnittstelle, endet meist auf „/v1“. Sie steht in der Anleitung des Anbieters.</div></label>
               <div class="grid g2">
-                <label class="f"><span class="t">Modell</span><input x-model="aiOwn.model" list="ai-models-own" placeholder="z. B. gpt-4.1-mini"><datalist id="ai-models-own"><template x-for="m in aiModels.own" :key="m"><option :value="m"></option></template></datalist></label>
-                <label class="f"><span class="t">Schnittstelle</span><select x-model="aiOwn.api"><option value="chat">Chat Completions</option><option value="responses">Responses API</option></select></label>
+                <label class="f"><span class="t">Modell <button type="button" class="help" @click="toggleHelp('h_model_aiOwn')">?</button></span>
+                  <div class="help-box" x-show="help.h_model_aiOwn">Der Name des KI-Modells beim Anbieter, zum Beispiel „gpt-4.1-mini“. Nach „Verbindung testen“ schlägt das Feld die verfügbaren Modelle vor.</div>
+                  <input x-model="aiOwn.model" list="ai-models-own" placeholder="z. B. gpt-4.1-mini"><datalist id="ai-models-own"><template x-for="m in aiModels.own" :key="m"><option :value="m"></option></template></datalist></label>
+                <label class="f"><span class="t">Schnittstelle <button type="button" class="help" @click="toggleHelp('h_api_aiOwn')">?</button></span>
+                  <div class="help-box" x-show="help.h_api_aiOwn">Wie das Tool mit dem Server spricht. „Chat Completions“ verstehen fast alle Server, auch lokale. Die „Responses API“ bieten vor allem neuere Dienste wie OpenAI.</div>
+                  <select x-model="aiOwn.api"><option value="chat">Chat Completions</option><option value="responses">Responses API</option></select></label>
               </div>
               <div class="grid g2">
                 <label class="f"><span class="t">Denktiefe <button type="button" class="help" @click="toggleHelp('eff_aiOwn')">?</button></span>
-                  <div class="help-box" x-show="help.eff_aiOwn">Für Modelle, die vor der Antwort nachdenken. Mehr Denken = gründlicher, aber langsamer. „Standard“ schickt nichts mit.</div>
+                  <div class="help-box" x-show="help.eff_aiOwn">Nur für Modelle, die vor der Antwort „nachdenken“. Mehr Denktiefe heißt gründlichere, aber langsamere Antworten. „Standard“ schickt keine Vorgabe mit, das Modell entscheidet selbst.</div>
                   <select x-model="aiOwn.effort"><template x-for="e in aiEfforts" :key="e[0]"><option :value="e[0]" x-text="e[1]" :selected="aiOwn.effort === e[0]"></option></template></select></label>
                 <label class="f"><span class="t">Max. Antwortlänge <button type="button" class="help" @click="toggleHelp('mt_aiOwn')">?</button></span>
-                  <div class="help-box" x-show="help.mt_aiOwn">Obergrenze in Token pro Schritt, inklusive Nachdenken. Zu klein = abgeschnittene Antworten. 8.000 passt für die meisten Modelle.</div><div class="suffix"><input type="number" min="500" max="64000" step="500" x-model.number="aiOwn.max_tokens"><span>Token</span></div></label>
+                  <div class="help-box" x-show="help.mt_aiOwn">Obergrenze pro Antwortschritt, das Nachdenken zählt mit. Gemessen wird in Token, das sind Wortstücke von etwa 4 Buchstaben. Zu klein heißt abgeschnittene Antworten, 8.000 passt für die meisten Modelle.</div><div class="suffix"><input type="number" min="500" max="64000" step="500" x-model.number="aiOwn.max_tokens"><span>Token</span></div></label>
               </div>
-              <label class="f"><span class="t">API-Schlüssel</span><input type="password" autocomplete="off" x-model="aiOwn.key" :placeholder="ai.own.has_key ? 'gespeichert (leer lassen = behalten)' : 'sk-… (bei lokalen Servern oft nicht nötig)'"></label>
+              <label class="f"><span class="t">API-Schlüssel <button type="button" class="help" @click="toggleHelp('h_key_aiOwn')">?</button></span>
+                <div class="help-box" x-show="help.h_key_aiOwn">Der geheime Zugangscode deines KI-Anbieters, du findest ihn in dessen Kontoeinstellungen. Er bleibt auf dem Server zu Hause und wird nicht wieder angezeigt.</div>
+                <input type="password" autocomplete="off" x-model="aiOwn.key" :placeholder="ai.own.has_key ? 'gespeichert (leer lassen = behalten)' : 'sk-… (bei lokalen Servern oft nicht nötig)'"></label>
               <div class="row"><button class="small primary" @click="saveAiOwn(true)">Speichern</button><button class="small" @click="testAi('own')">Verbindung testen</button><button class="small ghost" x-show="ai.own.has_key" @click="saveAiOwn(false, true)">Schlüssel löschen</button></div>
             </div>
           </template>
           <template x-if="aiNeedsConsent()">
-            <label class="check notice" style="margin-top:10px"><input type="checkbox" x-model="aiOwn.consent" @change="saveAiOwn()"><span>Ich bin einverstanden, dass meine Daten (Bestand, Ziele, Finanzprofil) für Antworten an den externen KI-Server geschickt werden.</span></label>
+            <label class="check notice" style="margin-top:10px"><input type="checkbox" x-model="aiOwn.consent" @change="saveAiOwn()"><span>Ich bin einverstanden, dass meine Daten (Bestand, Ziele, Finanzprofil) für Antworten an den KI-Anbieter im Internet geschickt werden.</span></label>
           </template>
           <div class="busy" x-show="aiTest.busy">Teste Verbindung …</div>
           <div x-show="aiTest.res" :class="aiTest.res && aiTest.res.ok ? 'ok-box' : 'err'" style="margin-top:10px" x-text="aiTestText()"></div>
@@ -816,17 +855,21 @@
             <details class="adv" style="margin-top:14px" :open="!ai.global.base_url">
               <summary>Gemeinsamer Zugang für alle Profile (nur Admin)</summary>
               <label class="check"><input type="checkbox" x-model="aiGlob.enabled"><span>Gemeinsamen Zugang einschalten</span></label>
-              <label class="f"><span class="t">Adresse (OpenAI-kompatibel)</span><input x-model="aiGlob.base_url" placeholder="http://192.168.178.62:8000/v1"><div class="hint">Lokal (z. B. oMLX auf dem MacBook): Daten bleiben im Heimnetz. Extern (z. B. OpenAI): jedes Profil muss zustimmen.</div></label>
+              <label class="f"><span class="t">Server-Adresse</span><input x-model="aiGlob.base_url" placeholder="http://192.168.178.62:8000/v1"><div class="hint">OpenAI-kompatible Adresse, endet meist auf „/v1“. Lokal (z. B. oMLX auf dem MacBook) bleiben die Daten im Heimnetz. Extern (z. B. OpenAI) muss jedes Profil erst zustimmen.</div></label>
               <div class="grid g2">
-                <label class="f"><span class="t">Modell</span><input x-model="aiGlob.model" list="ai-models-glob"><datalist id="ai-models-glob"><template x-for="m in aiModels.global" :key="m"><option :value="m"></option></template></datalist></label>
-                <label class="f"><span class="t">Schnittstelle</span><select x-model="aiGlob.api"><option value="chat">Chat Completions</option><option value="responses">Responses API</option></select></label>
+                <label class="f"><span class="t">Modell <button type="button" class="help" @click="toggleHelp('h_model_aiGlob')">?</button></span>
+                  <div class="help-box" x-show="help.h_model_aiGlob">Der Name des KI-Modells auf dem Server. Nach „Verbindung testen“ schlägt das Feld die verfügbaren Modelle vor.</div>
+                  <input x-model="aiGlob.model" list="ai-models-glob"><datalist id="ai-models-glob"><template x-for="m in aiModels.global" :key="m"><option :value="m"></option></template></datalist></label>
+                <label class="f"><span class="t">Schnittstelle <button type="button" class="help" @click="toggleHelp('h_api_aiGlob')">?</button></span>
+                  <div class="help-box" x-show="help.h_api_aiGlob">Wie das Tool mit dem Server spricht. „Chat Completions“ verstehen fast alle Server, auch lokale. Die „Responses API“ bieten vor allem neuere Dienste wie OpenAI.</div>
+                  <select x-model="aiGlob.api"><option value="chat">Chat Completions</option><option value="responses">Responses API</option></select></label>
               </div>
               <div class="grid g2">
                 <label class="f"><span class="t">Denktiefe <button type="button" class="help" @click="toggleHelp('eff_aiGlob')">?</button></span>
-                  <div class="help-box" x-show="help.eff_aiGlob">Für Modelle, die vor der Antwort nachdenken. Mehr Denken = gründlicher, aber langsamer. „Standard“ schickt nichts mit.</div>
+                  <div class="help-box" x-show="help.eff_aiGlob">Nur für Modelle, die vor der Antwort „nachdenken“. Mehr Denktiefe heißt gründlichere, aber langsamere Antworten. „Standard“ schickt keine Vorgabe mit, das Modell entscheidet selbst.</div>
                   <select x-model="aiGlob.effort"><template x-for="e in aiEfforts" :key="e[0]"><option :value="e[0]" x-text="e[1]" :selected="aiGlob.effort === e[0]"></option></template></select></label>
                 <label class="f"><span class="t">Max. Antwortlänge <button type="button" class="help" @click="toggleHelp('mt_aiGlob')">?</button></span>
-                  <div class="help-box" x-show="help.mt_aiGlob">Obergrenze in Token pro Schritt, inklusive Nachdenken. Zu klein = abgeschnittene Antworten. 8.000 passt für die meisten Modelle.</div><div class="suffix"><input type="number" min="500" max="64000" step="500" x-model.number="aiGlob.max_tokens"><span>Token</span></div></label>
+                  <div class="help-box" x-show="help.mt_aiGlob">Obergrenze pro Antwortschritt, das Nachdenken zählt mit. Gemessen wird in Token, das sind Wortstücke von etwa 4 Buchstaben. Zu klein heißt abgeschnittene Antworten, 8.000 passt für die meisten Modelle.</div><div class="suffix"><input type="number" min="500" max="64000" step="500" x-model.number="aiGlob.max_tokens"><span>Token</span></div></label>
               </div>
               <label class="f"><span class="t">API-Schlüssel</span><input type="password" autocomplete="off" x-model="aiGlob.key" :placeholder="ai.global.has_key ? 'gespeichert (leer lassen = behalten)' : 'API-Schlüssel'"></label>
               <div class="hint" style="margin:-6px 0 10px">Ändert sich die Adresse, wird der gespeicherte Schlüssel gelöscht, damit er nie an einen anderen Server geht.</div>
@@ -839,7 +882,7 @@
       <div class="card">
         <h2>Profil</h2>
         <label class="f"><span class="t">Name</span><input x-model="stName" @change="saveName()" maxlength="30"></label>
-        <div class="notice" style="margin-bottom:10px" x-show="me.is_admin && !me.has_pin">Du bist Admin (darfst den gemeinsamen KI-Zugang ändern). Leg am besten eine PIN fest.</div>
+        <div class="notice" style="margin-bottom:10px" x-show="me.is_admin && !me.has_pin">Du bist Admin, darfst also den gemeinsamen KI-Zugang ändern. Leg am besten eine PIN fest, damit das nur du kannst.</div>
         <form @submit.prevent="savePin()">
           <span class="t" style="font-weight:600;font-size:.93rem;display:block;margin-bottom:6px" x-text="me.has_pin ? 'PIN ändern oder entfernen' : 'PIN festlegen'"></span>
           <div class="grid g2">
@@ -860,10 +903,10 @@
         <h2>Telegram</h2>
         <template x-if="!me.telegram">
           <div>
-            <p class="ink2">Verbinde Telegram, dann bekommst du deinen Bericht aufs Handy, in deiner Währung und Einheit.</p>
-            <ol class="ink2" style="padding-left:20px"><li>Auf „Telegram verbinden“ tippen</li><li>In Telegram auf „Starten“ tippen</li><li>Fertig: Der Bot bestätigt die Verbindung</li></ol>
+            <p class="ink2">Telegram ist eine kostenlose Nachrichten-App, ähnlich wie WhatsApp. Verbindest du sie, bekommst du deinen Bericht aufs Handy.</p>
+            <ol class="ink2" style="padding-left:20px"><li>Auf „Telegram verbinden“ tippen</li><li>In Telegram auf „Starten“ tippen</li><li>Fertig: Du bekommst in Telegram eine Bestätigung</li></ol>
             <button class="primary" @click="tgLink()" x-show="meta.bot">Telegram verbinden</button>
-            <div class="notice" x-show="!meta.bot">Der Telegram-Bot ist auf dem Server noch nicht eingerichtet.</div>
+            <div class="notice" x-show="!meta.bot">Telegram ist auf dem Server noch nicht eingerichtet. Das muss der Admin erledigen.</div>
             <template x-if="tgUrl"><p style="margin-top:10px;font-size:.9rem">Öffnet sich nichts? <a :href="tgUrl" target="_blank" rel="noopener" x-text="tgUrl"></a><br><span class="muted">Danach diese Seite neu laden.</span></p></template>
           </div>
         </template>
@@ -880,7 +923,7 @@
           <template x-for="(lbl, k) in meta.report_content" :key="k"><label class="check"><input type="checkbox" :value="k" x-model="st.report.content" @change="saveSettings()"><span x-text="lbl"></span></label></template></div>
         <h3 class="section">Alarme</h3>
         <label class="f"><span class="t">Wann melden? <button type="button" class="help" @click="toggleHelp('level')">?</button></span>
-          <div class="help-box" x-show="help.level">Die Schwelle richtet sich nach der üblichen Schwankung jedes Markts: Bei Gold meldet sich das Tool erst bei deutlich kleineren Bewegungen als bei Bitcoin. Gemeldet werden nur Märkte, die du beobachtest oder besitzt.</div>
+          <div class="help-box" x-show="help.level">Das Tool schickt dir eine Nachricht, wenn ein Kurs ungewöhnlich stark steigt oder fällt. Was „ungewöhnlich“ ist, hängt von der Anlage ab: Bei Gold reicht eine kleinere Bewegung als bei Bitcoin. Gemeldet werden nur Anlagen, die du beobachtest oder besitzt.</div>
           <select x-model="st.alerts.level" @change="saveSettings()"><option value="off">Nie (nur Bericht)</option><option value="strong">Nur bei sehr großen Bewegungen</option><option value="normal">Bei großen Bewegungen</option></select></label>
         <div x-show="st.alerts.level !== 'off'">
           <template x-for="(lbl, k) in meta.alert_rules" :key="k"><label class="check"><input type="checkbox" :value="k" x-model="st.alerts.rules" @change="saveSettings()"><span x-text="lbl"></span></label></template>
@@ -903,36 +946,76 @@
 
 <!-- ---------- Methodik ---------- -->
 <section x-show="route === 'methodik'">
-  <div class="page-head"><h1>Wie rechnet das Tool?</h1><p>Niemand kann Kurse vorhersagen. Dieses Tool zeigt deshalb Spannen und prüft jede Nacht, ob diese Spannen in der Vergangenheit gestimmt hätten.</p></div>
+  <div class="page-head"><h1>Wie rechnet das Tool?</h1><p>Niemand kann Kurse (Preise) sicher vorhersagen. Das Tool zeigt deshalb Spannen, in denen das Ergebnis in 9 von 10 Fällen landet, und prüft jede Nacht, ob das früher gestimmt hätte.</p></div>
   <template x-if="meth">
   <div class="stack">
     <div class="card">
       <h2>Treffen die Spannen?</h2>
-      <p class="ink2">So oft lag der echte Kurs später innerhalb der 90-%-Spanne, die das Tool vorher berechnet hätte. Ideal sind 90 %. Gezeigt: deine Märkte.</p>
+      <p class="ink2">So oft lag der echte Kurs später in der Spanne, die das Tool vorher berechnet hätte. Ideal sind 90 %, also 9 von 10 Treffern. Gezeigt werden deine Märkte.</p>
       <div class="table-wrap"><table class="t"><thead><tr><th>Anlage</th><th>in 30 Tagen</th><th>in 90 Tagen</th><th>in 1 Jahr</th></tr></thead>
         <tbody><template x-for="(m, a) in meth" :key="a"><tr><td><i class="dot" :style="'background:' + col(a)"></i> <span x-text="m.name"></span></td>
           <template x-for="d in [30, 90, 365]" :key="d"><td x-text="covText(m, d)"></td></template></tr></template></tbody></table></div>
     </div>
     <div class="card">
       <h2>Kann man die Richtung vorhersagen?</h2>
-      <p class="ink2">Getestet wurden unter anderem Momentum (was gestiegen ist, steigt weiter), die 200-Tage-Linie und ein Lernmodell. Verglichen wird mit „steigt immer“. Ein Modell zählt nur, wenn es nach Gebühren klar besser ist.</p>
+      <p class="ink2">Getestet werden Rechenmodelle, die sagen wollen, ob ein Kurs steigt oder fällt. Darunter sind „Momentum“ (was gestiegen ist, steigt weiter), die 200-Tage-Linie (Durchschnittskurs der letzten 200 Tage) und ein lernendes Computermodell. Ein Modell zählt nur, wenn es nach Gebühren klar öfter richtig liegt als die einfache Regel „steigt immer“.</p>
       <div class="table-wrap"><table class="t"><thead><tr><th>Anlage</th><th>Zeitraum</th><th>„Steigt immer“ traf</th><th>Bestes Modell</th><th>traf</th><th>Besser?</th></tr></thead>
         <tbody><template x-for="row in dirRows()" :key="row.k"><tr><td x-text="row.name"></td><td x-text="row.days + ' Tage'"></td><td x-text="num(row.base * 100, 0) + ' %'"></td><td x-text="row.best"></td><td x-text="num(row.best_hit * 100, 0) + ' %'"></td><td x-text="row.approved ? 'ja' : 'nein'"></td></tr></template></tbody></table></div>
     </div>
     <div class="card faq">
-      <h2>Begriffe</h2>
-      <details><summary>ETF</summary><p>Ein Fonds, der an der Börse gehandelt wird und einfach einen Index nachbildet, zum Beispiel die 1.500 größten Firmen der Welt. Günstig (oft 0,1–0,3 % Kosten im Jahr) und breit gestreut.</p></details>
-      <details><summary>Spotpreis und Materialwert</summary><p>Der Spotpreis ist der aktuelle Börsenpreis für reines Edelmetall. Der Materialwert deiner Münze oder Kette ist Feingewicht × Spotpreis. Händler zahlen beim Ankauf meist 2–10 % weniger, bei Schmuck oft deutlich weniger.</p></details>
-      <details><summary>Feinheit (z. B. 585)</summary><p>Die Feinheit sagt, wie viel Tausendstel reines Metall enthalten sind. 585 heißt 58,5 % Gold, der Rest sind andere Metalle.</p></details>
-      <details><summary>Schwankung</summary><p>Wie stark der Kurs typischerweise hoch und runter geht. „±8 % pro Monat“ heißt: In etwa 2 von 3 Monaten bewegt sich der Kurs um weniger als 8 %.</p></details>
-      <details><summary>Datenquellen</summary><p>Kurse: Binance, Yahoo Finance (alle 5 Minuten), Spotpreise von gold-api.com. Wechselkurse: Europäische Zentralbank. Inflation: Eurostat (HVPI).</p></details>
+      <h2>Begriffe einfach erklärt</h2>
+      <p class="ink2">Tipp auf einen Begriff, um die Erklärung zu öffnen.</p>
+      <h3 class="section">Grundlagen</h3>
+      <details><summary>Anlage / Geldanlage</summary><p>Alles, worin du Geld steckst, damit es mehr wird, zum Beispiel ETFs, Aktien, Gold oder Tagesgeld. Kaufst du für 1.000 € Gold, ist das deine Anlage.</p></details>
+      <details><summary>Kurs</summary><p>Der aktuelle Preis einer Anlage. Er ändert sich, solange die Börse offen ist, oft im Minutentakt. Kostet ein ETF-Anteil heute 100 € und morgen 101 €, ist sein Kurs um 1 % gestiegen.</p></details>
+      <details><summary>Börse</summary><p>Ein Marktplatz, auf dem Aktien, ETFs und andere Anlagen gekauft und verkauft werden. Heute läuft das fast nur per Computer: Du gibst deiner Bank den Auftrag, sie kauft für dich an der Börse.</p></details>
+      <details><summary>Depot</summary><p>Das Konto, auf dem deine Aktien und ETFs liegen. Du eröffnest es bei deiner Bank oder bei einem Online-Broker (einer Bank fürs Anlegen im Internet), oft kostenlos.</p></details>
+      <details><summary>Sparplan</summary><p>Jeden Monat wird automatisch ein fester Betrag angelegt, zum Beispiel 100 € in einen ETF. Du musst dich um nichts kümmern und kaufst mal teurer, mal günstiger ein.</p></details>
+      <details><summary>Wertzuwachs / Rendite</summary><p>Um wie viel Prozent eine Anlage pro Jahr im Schnitt mehr wert wird. 7 % Rendite heißt: Aus 1.000 € werden nach einem Jahr etwa 1.070 €.</p></details>
+      <details><summary>Zinseszins</summary><p>Gewinne bringen selbst wieder Gewinne, deshalb wächst Geld über lange Zeit immer schneller. Bei 7 % im Jahr werden aus 10.000 € nach 10 Jahren etwa 19.700 €, nach 20 Jahren schon etwa 38.700 €.</p></details>
+      <details><summary>Inflation</summary><p>Preise steigen, dasselbe Geld kauft später weniger. Bei 2 % im Jahr kaufen 100 € in 10 Jahren nur noch so viel wie heute 82 €.</p></details>
+      <details><summary>In heutigem Geld</summary><p>Beträge aus der Zukunft sind um die Inflation bereinigt, damit du sie mit heutigen Preisen vergleichen kannst. Bei 2 % Inflation sind 12.190 € in 10 Jahren so viel wert wie heute 10.000 €.</p></details>
+      <details><summary>Notgroschen</summary><p>Etwa 3 Monatsausgaben auf dem Tagesgeldkonto, für ein kaputtes Auto, eine neue Waschmaschine oder einen Jobverlust. Gibst du 2.000 € im Monat aus, sind das 6.000 €. Erst wenn er steht, lohnt sich das Anlegen.</p></details>
+      <details><summary>Tagesgeld</summary><p>Ein Sparkonto mit Zinsen, an das du jederzeit herankommst. Bis 100.000 € pro Bank ist dein Geld gesetzlich abgesichert. Deshalb ist es der richtige Ort für den Notgroschen.</p></details>
+      <h3 class="section">Anlagen</h3>
+      <details><summary>Aktie</summary><p>Ein kleiner Anteil an einer Firma. Verdient die Firma gut, steigt meist der Kurs, oft gibt es zusätzlich eine jährliche Gewinnbeteiligung (Dividende). Mit einer Siemens-Aktie gehört dir ein winziges Stück von Siemens.</p></details>
+      <details><summary>Index</summary><p>Eine Liste von Firmen, deren Kurse zusammen gemessen werden. Der DAX zum Beispiel enthält 40 große deutsche Firmen. Steigt der DAX um 1 %, sind diese Firmen im Schnitt 1 % mehr wert.</p></details>
+      <details><summary>ETF</summary><p>Ein Korb mit vielen Aktien auf einmal, den du an der Börse kaufst (Abkürzung für „Exchange Traded Fund“). Er bildet einen Index nach, die laufenden Kosten liegen meist bei 0,1–0,3 % im Jahr. Mit einem Welt-ETF für 100 € besitzt du kleine Stücke von über 1.000 Firmen.</p></details>
+      <details><summary>MSCI World</summary><p>Ein Index der Firma MSCI mit rund 1.400 großen Firmen aus 23 Industrieländern, etwa Apple, Nestlé und Siemens. Etwa 70 % davon sind US-Firmen. Ein ETF darauf gilt bei vielen als einfacher Einstieg.</p></details>
+      <details><summary>Fonds</summary><p>Ein großer Geldtopf, in den viele Anleger einzahlen und den eine Fondsgesellschaft für sie anlegt. Ein ETF ist ein Fonds, der einfach einen Index nachbildet und deshalb günstig ist. Fonds mit eigenem Verwalter kosten oft 1–2 % im Jahr.</p></details>
+      <details><summary>Anleihe</summary><p>Ein Kredit, den du einem Staat oder einer Firma gibst. Dafür bekommst du Zinsen und am Ende dein Geld zurück. Anleihen schwanken meist weniger als Aktien, bringen langfristig aber meist auch weniger.</p></details>
+      <details><summary>Bitcoin / Krypto</summary><p>Digitales Geld ohne Bank dahinter. Der Kurs schwankt sehr stark: In der Vergangenheit fiel Bitcoin mehrfach um mehr als die Hälfte. Leg nur Geld an, dessen Verlust du verkraften kannst.</p></details>
+      <h3 class="section">Risiko und Mischung</h3>
+      <details><summary>Schwankung</summary><p>Wie stark der Kurs typischerweise hoch und runter geht. „±8 % pro Monat“ heißt: In etwa 2 von 3 Monaten bewegt sich der Kurs um weniger als 8 %, bei 1.000 € also um weniger als 80 €.</p></details>
+      <details><summary>Absturz vom Hoch</summary><p>Wie weit ein Kurs unter seinem bisherigen Höchststand liegt. War ein ETF-Anteil einmal 100 € wert und kostet jetzt 70 €, liegt er 30 % unter dem Hoch. Wichtig ist auch, wie lange es dauert, bis das alte Hoch wieder erreicht ist.</p></details>
+      <details><summary>Streuen</summary><p>Geld auf viele Anlagen verteilen, damit ein Absturz nicht alles trifft. Steckt alles in einer Firma und sie geht pleite, ist das Geld weg. In einem ETF mit 1.400 Firmen merkst du so eine Pleite kaum.</p></details>
+      <details><summary>Mischung</summary><p>Wie dein Geld auf Anlagen verteilt ist, zum Beispiel 70 % Welt-ETF und 30 % Tagesgeld. Je mehr Aktien in der Mischung, desto mehr Wertzuwachs ist möglich, desto stärker schwankt sie aber auch.</p></details>
+      <details><summary>Umschichten</summary><p>Ab und zu zurück zur geplanten Mischung. Beispiel: Aus 70 % ETF und 30 % Tagesgeld sind durch Kursgewinne 80 zu 20 geworden. Dann verkaufst du etwas vom ETF und füllst das Tagesgeld wieder auf.</p></details>
+      <details><summary>Marktphase</summary><p>Eine grobe Einteilung, wie sich ein Markt gerade verhält: ruhig steigend, unruhig oder fallend. Sie beschreibt nur die Lage und sagt nicht voraus, wie es weitergeht.</p></details>
+      <h3 class="section">Kosten und Steuern</h3>
+      <details><summary>Laufende Kosten</summary><p>Was ein ETF oder Fonds jedes Jahr von deinem Geld abzieht (Fachwort: TER, „Total Expense Ratio“). 0,2 % im Jahr sind bei 10.000 € etwa 20 €. Du zahlst das nicht extra, es steckt schon im Kurs.</p></details>
+      <details><summary>Abgeltungsteuer</summary><p>Steuer auf Gewinne aus Geldanlagen, rund 26 % (25 % plus Solidaritätszuschlag, ggf. Kirchensteuer). Deine Bank zieht sie automatisch ab. Von 1.000 € Gewinn über dem Freibetrag gehen bei Aktien also etwa 264 € ans Finanzamt.</p></details>
+      <details><summary>Freibetrag</summary><p>1.000 € Gewinn pro Jahr bleiben steuerfrei, für Ehepaare 2.000 € (Fachwort: Sparerpauschbetrag). Dafür stellst du bei deiner Bank einen Freistellungsauftrag, meist mit ein paar Klicks im Online-Banking.</p></details>
+      <details><summary>Kirchensteuer</summary><p>Bist du Mitglied einer Kirche, kommen auf die Abgeltungsteuer noch 8 % (Bayern, Baden-Württemberg) oder 9 % (andere Bundesländer) obendrauf. Die Bank zieht sie automatisch mit ab.</p></details>
+      <details><summary>Persönlicher Steuersatz</summary><p>Der Steuersatz auf jeden zusätzlichen Euro deines Einkommens (Fachwort: Grenzsteuersatz), bei normalem Einkommen meist 25–42 %. Er gilt zum Beispiel, wenn du Gold, Silber oder Krypto schon innerhalb eines Jahres mit Gewinn verkaufst.</p></details>
+      <details><summary>Steuerfrei nach einem Jahr</summary><p>Gold und Silber (Münzen, Barren, Schmuck) sowie Krypto sind in Deutschland nach mehr als einem Jahr Besitz steuerfrei. Verkaufst du früher, zahlst du deinen persönlichen Steuersatz, wenn alle solchen Gewinne im Jahr zusammen 1.000 € oder mehr ergeben.</p></details>
+      <h3 class="section">Gold &amp; Silber</h3>
+      <details><summary>Spotpreis und Materialwert</summary><p>Der Spotpreis ist der aktuelle Börsenpreis für reines Gold oder Silber. Der Materialwert deiner Münze oder Kette ist Feingewicht × Spotpreis, also was das reine Metall wert ist. Händler zahlen beim Ankauf meist 2–10 % weniger, bei Schmuck oft deutlich weniger.</p></details>
+      <details><summary>Feinheit (z. B. 585)</summary><p>Die Feinheit sagt, wie viel Tausendstel reines Metall enthalten sind. 585 heißt 58,5 % Gold, eine Kette mit 10 g enthält also 5,85 g reines Gold. Die Zahl ist meist eingestempelt: 999 bei Barren, 585 oder 333 bei Goldschmuck, 925 bei Silber.</p></details>
+      <details><summary>Feinunze</summary><p>Die übliche Gewichtseinheit für Edelmetall: 1 Feinunze sind 31,1 g reines Metall. Bekannte Münzen wie Krügerrand oder Maple Leaf enthalten genau 1 Feinunze Gold.</p></details>
+      <h3 class="section">So rechnet das Tool</h3>
+      <details><summary>Prognose</summary><p>Eine Schätzung, was aus deinem Geld werden kann. Hier ist sie immer eine Spanne, nie eine genaue Vorhersage, denn niemand kennt die Zukunft.</p></details>
+      <details><summary>Verläufe durchspielen</summary><p>Das Tool rechnet tausende mögliche Zukünfte aus echten Kursen der Vergangenheit durch (Fachwort: Monte-Carlo-Simulation). Dafür setzt es echte Abschnitte von je 20 Börsentagen zufällig neu zusammen. Am Ende zählt es, wie oft welches Ergebnis herauskommt.</p></details>
+      <details><summary>Spanne</summary><p>Der Bereich, in dem das Ergebnis in 9 von 10 Fällen landet. „Zwischen 9.000 € und 20.000 €“ heißt: Nur 1 von 20 Verläufen endete darunter und 1 von 20 darüber.</p></details>
+      <details><summary>Mittlerer Verlauf</summary><p>Die Hälfte der durchgespielten Verläufe endet darüber, die Hälfte darunter. Er ist kein Versprechen, sondern die Mitte aller Möglichkeiten.</p></details>
+      <details><summary>Datenquellen</summary><p>Kurse: Binance und Yahoo Finance (alle 5 Minuten), Spotpreise von gold-api.com. Wechselkurse: Europäische Zentralbank. Inflation: Eurostat (HVPI, die amtlich gemessene Preissteigerung in Europa).</p></details>
     </div>
   </div>
   </template>
 </section>
 </main>
 <footer class="foot">
-  Keine Anlageberatung. Prognosen sind Spannen aus der Vergangenheit, keine Garantie. · <a href="#/methodik">Wie rechnet das Tool?</a> · <span x-text="statusText"></span>
+  Keine Anlageberatung. Prognosen sind Spannen auf Basis der Vergangenheit, keine Garantie. · <a href="#/methodik">Wie rechnet das Tool?</a> · <span x-text="statusText"></span>
 </footer>
 
 <!-- ---------- KI-Ratgeber ---------- -->
@@ -948,7 +1031,7 @@
     </template>
     <template x-if="chat.ready && !chat.msgs.length">
       <div class="chat-hello">
-        <p>Hallo <span x-text="me.name"></span>! Ich kenne deinen Bestand, deine Ziele und alle Rechner. Frag mich alles rund um Geld, ohne Fachchinesisch.</p>
+        <p>Hallo <span x-text="me.name"></span>! Ich bin dein KI-Ratgeber und kenne deinen Bestand, deine Ziele und alle Rechner. Frag mich alles rund um Geld, ich erkläre es in einfachen Worten.</p>
         <div class="chips"><template x-for="q in chatSuggestions()" :key="q"><button class="small" @click="send(q)" x-text="q"></button></template></div>
       </div>
     </template>
@@ -971,13 +1054,13 @@
 <template x-if="hf">
 <div class="modal-bg" @click.self="hf = null" @keydown.escape.window="hf = null">
   <div class="modal">
-    <div class="row between"><h2 style="margin:0" x-text="hf.id ? 'Position ändern' : 'Was möchtest du eintragen?'"></h2><button class="ghost small" @click="hf = null">Schließen</button></div>
+    <div class="row between"><h2 style="margin:0" x-text="hf.id ? 'Eintrag ändern' : 'Was möchtest du eintragen?'"></h2><button class="ghost small" @click="hf = null">Schließen</button></div>
     <template x-if="!hf.id && !hf.asset">
       <div style="margin-top:14px">
         <div class="tabs"><template x-for="k in kindTabs()" :key="k.id"><button class="small" :class="hf.kind === k.id && 'sel'" @click="hf.kind = k.id; hf.q = ''" x-text="k.label"></button></template></div>
         <input type="search" placeholder="Suchen …" x-model="hf.q" style="margin-bottom:10px" x-show="assetsOfKind(hf.kind).length > 6">
         <div class="choice"><template x-for="a in assetsOfKind(hf.kind, hf.q)" :key="a"><button @click="hf.asset = a; hfDefaults()"><i class="dot" :style="'background:' + col(a)"></i><span x-text="assetName(a)"></span></button></template></div>
-        <p class="hint" style="margin-top:10px">Nicht dabei? Unter <a href="#/maerkte" @click="hf = null">Märkte</a> kannst du jede Aktie, jeden ETF oder Coin hinzufügen.</p>
+        <p class="hint" style="margin-top:10px">Nicht dabei? Unter <a href="#/maerkte" @click="hf = null">Märkte</a> kannst du jede Aktie, jeden ETF oder jede Kryptowährung hinzufügen.</p>
       </div>
     </template>
     <template x-if="hf.asset">
@@ -995,9 +1078,13 @@
         </template>
         <template x-if="hf.form !== 'coin'">
           <div class="grid g3">
-            <label class="f"><span class="t">Gewicht</span><input type="number" min="0" step="any" x-model.number="hf.weight" @input="hfPreview()"></label>
-            <label class="f"><span class="t">Einheit</span><select x-model="hf.unit" @change="hfPreview()"><option value="g">Gramm</option><option value="oz">Unze</option><option value="kg">Kilo</option></select></label>
-            <label class="f"><span class="t">Feinheit</span><select x-model.number="hf.fineness" @change="hfPreview()"><template x-for="f in meta.fineness[hf.asset]" :key="f.value"><option :value="f.value" x-text="fineShort(f)" :selected="f.value == hf.fineness"></option></template></select></label>
+            <label class="f"><span class="t">Gewicht <button type="button" class="help" @click="toggleHelp('h_hf_weight')">?</button></span>
+              <div class="help-box" x-show="help.h_hf_weight">Das Gesamtgewicht des Stücks. Bei Barren steht es eingeprägt, bei Schmuck hilft eine genaue Küchen- oder Briefwaage.</div>
+              <input type="number" min="0" step="any" x-model.number="hf.weight" @input="hfPreview()"></label>
+            <label class="f"><span class="t">Einheit</span><select x-model="hf.unit" @change="hfPreview()"><option value="g">Gramm</option><option value="oz">Feinunze (31,1 g)</option><option value="kg">Kilo</option></select></label>
+            <label class="f"><span class="t">Feinheit <button type="button" class="help" @click="toggleHelp('h_hf_fine')">?</button></span>
+              <div class="help-box" x-show="help.h_hf_fine">Wie viel Tausendstel reines Metall drin sind, meist als kleiner Stempel eingeprägt. 999 ist fast rein (Barren, viele Münzen), 585 heißt 58,5 % Gold. Weißt du es nicht: Bei Goldschmuck ist 585 häufig, bei Silberschmuck 925.</div>
+              <select x-model.number="hf.fineness" @change="hfPreview()"><template x-for="f in meta.fineness[hf.asset]" :key="f.value"><option :value="f.value" x-text="fineShort(f)" :selected="f.value == hf.fineness"></option></template></select></label>
           </div>
         </template>
         <div class="grid g2">
@@ -1008,17 +1095,21 @@
     </template>
     <template x-if="hf.asset && !isMetal(hf.asset)">
       <div style="margin-top:16px">
-        <label class="f"><span class="t" x-text="'Wie viele ' + meta.assets[hf.asset].units + '?'"></span>
+        <label class="f"><span class="t"><span x-text="'Wie viele ' + meta.assets[hf.asset].units + '?'"></span> <button type="button" class="help" @click="toggleHelp('h_hf_qty')">?</button></span>
+          <div class="help-box" x-show="help.h_hf_qty">Die Stückzahl steht in deinem Depot (Konto für Aktien und ETFs), meist in der Spalte „Stück“ oder „Bestand“, bei Krypto in deiner App. Kommastellen sind normal, zum Beispiel 12,5 Anteile durch einen Sparplan.</div>
           <input type="number" min="0" step="any" x-model.number="hf.quantity" @input="hfPreview()" :placeholder="meta.assets[hf.asset].kind === 'crypto' ? 'z. B. 0,05' : 'z. B. 12,5'">
-          <div class="hint" x-text="'Gerechnet wird mit dem Kurs von ' + meta.assets[hf.asset].symbol + '. ' + (meta.assets[hf.asset].kind === 'etf' ? 'Andere ETFs auf denselben Index entwickeln sich fast gleich.' : '')"></div></label>
+          <div class="hint" x-text="'Gerechnet wird mit dem Kurs von ' + meta.assets[hf.asset].symbol + '. ' + (meta.assets[hf.asset].kind === 'etf' ? 'Hast du einen anderen ETF auf denselben Index (dieselbe Firmenliste), passt das trotzdem: Er entwickelt sich fast gleich.' : '')"></div></label>
         <label class="f"><span class="t">Bezeichnung (freiwillig)</span><input x-model="hf.label" maxlength="60" placeholder="z. B. Depot bei der Hausbank"></label>
       </div>
     </template>
     <template x-if="hf.asset">
       <div>
         <div class="grid g2">
-          <label class="f"><span class="t">Kaufdatum (freiwillig)</span><input type="date" x-model="hf.buy_date" @change="hfPreview()" max="9999-12-31"></label>
-          <label class="f"><span class="t">Bezahlt insgesamt (freiwillig)</span><div class="suffix"><input type="number" min="0" step="any" x-model="hf.buy_price"><span x-text="curSym()"></span></div>
+          <label class="f"><span class="t">Kaufdatum (freiwillig)</span><input type="date" x-model="hf.buy_date" @change="hfPreview()" max="9999-12-31">
+            <div class="hint">Ungefähr reicht.</div></label>
+          <label class="f"><span class="t">Bezahlt insgesamt (freiwillig) <button type="button" class="help" @click="toggleHelp('h_hf_price')">?</button></span>
+            <div class="help-box" x-show="help.h_hf_price">Was du damals insgesamt bezahlt hast, mit Gebühren. Es steht auf der Rechnung oder der Kaufabrechnung der Bank. Weißt du es nicht, lass das Feld leer.</div>
+            <div class="suffix"><input type="number" min="0" step="any" x-model="hf.buy_price"><span x-text="curSym()"></span></div>
             <div class="hint" x-show="hf.buy_date && hfInfo && hfInfo.then"><a href="#" @click.prevent="hf.buy_price = Math.round(hfInfo.then)" x-text="'Wert am Kaufdatum übernehmen: ' + money(hfInfo && hfInfo.then)"></a></div></label>
         </div>
         <div class="ok-box" x-show="hfInfo && hfInfo.now" x-text="hfInfo ? hfInfo.text : ''"></div>
@@ -1036,11 +1127,13 @@
   <div class="modal">
     <div class="row between"><h2 style="margin:0" x-text="plf.id ? 'Sparplan ändern' : 'Sparplan eintragen'"></h2><button class="ghost small" @click="plf = null">Schließen</button></div>
     <label class="f" style="margin-top:14px"><span class="t">Worin?</span>
-      <select x-model="plf.asset"><template x-for="k in marketGroups()" :key="k.id"><optgroup :label="k.label"><template x-for="a in k.items" :key="a"><option :value="a" x-text="assetName(a)" :selected="a === plf.asset"></option></template></optgroup></template></select></label>
+      <select x-model="plf.asset"><template x-for="k in marketGroups()" :key="k.id"><optgroup :label="k.label"><template x-for="a in k.items" :key="a"><option :value="a" x-text="assetName(a)" :selected="a === plf.asset"></option></template></optgroup></template></select>
+      <div class="hint">Bei einem ETF wählst du den Index (die Firmenliste), den er nachbildet, zum Beispiel MSCI World.</div></label>
     <div class="grid g2">
       <label class="f"><span class="t">Betrag pro Monat</span><input type="number" min="1" step="any" x-model.number="plf.amount"></label>
       <label class="f"><span class="t">Währung</span><select x-model="plf.cur"><template x-for="(c, k) in meta.currencies" :key="k"><option :value="k" x-text="k" :selected="k === plf.cur"></option></template></select></label>
-      <label class="f"><span class="t">Erster Kauf</span><input type="date" x-model="plf.start"></label>
+      <label class="f"><span class="t">Erster Kauf</span><input type="date" x-model="plf.start">
+        <div class="hint">Steht in deinen Bank-Unterlagen. Ungefähr reicht.</div></label>
       <label class="f"><span class="t">Ende (leer = läuft noch)</span><input type="date" x-model="plf.end"></label>
     </div>
     <div class="err" x-show="plf.err" x-text="plf.err"></div>

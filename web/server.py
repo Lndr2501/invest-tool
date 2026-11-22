@@ -52,7 +52,7 @@ app = FastAPI(title="Invest-Tool", default_response_class=J, docs_url=None, redo
 async def guard(request: Request, call_next):
     # Schutz gegen Fremdseiten: schreibende Anfragen brauchen den eigenen Header (erzwingt CORS-Vorabprüfung)
     if request.method in ("POST", "PUT", "DELETE") and request.headers.get("x-invest") != "1":
-        return J({"detail": "Ungültige Anfrage."}, status_code=403)
+        return J({"detail": "Diese Anfrage wurde abgelehnt. Bitte lade die Seite neu."}, status_code=403)
     resp = await call_next(request)
     if request.url.path.startswith("/api/"):
         resp.headers["Cache-Control"] = "no-store"
@@ -73,7 +73,7 @@ def me(request: Request, con=Depends(con_dep)) -> dict:
     pid = profiles.read_session(request.cookies.get(COOKIE))
     p = profiles.get(con, pid) if pid else None
     if not p:
-        raise HTTPException(401, "Bitte Profil wählen.")
+        raise HTTPException(401, "Bitte wähle zuerst dein Profil.")
     return p
 
 
@@ -97,9 +97,9 @@ async def _body(request: Request) -> dict:
     try:
         b = await request.json()
     except Exception:
-        raise HTTPException(400, "Ungültige Daten.") from None
+        raise HTTPException(400, "Die Eingaben kamen nicht richtig an. Bitte lade die Seite neu.") from None
     if not isinstance(b, dict):
-        raise HTTPException(400, "Ungültige Daten.")
+        raise HTTPException(400, "Die Eingaben kamen nicht richtig an. Bitte lade die Seite neu.")
     return b
 
 
@@ -145,14 +145,14 @@ async def login(request: Request, response: Response, con=Depends(con_dep)):
     pid = int(body.get("id") or 0)
     p = profiles.get(con, pid)
     if not p:
-        raise HTTPException(404, "Profil nicht gefunden.")
+        raise HTTPException(404, "Dieses Profil gibt es nicht mehr. Bitte lade die Seite neu.")
     if p["has_pin"]:
         fails = [t for t in _pin_fail.get(pid, []) if time.time() - t < 300]
         if len(fails) >= 5:
-            raise HTTPException(429, "Zu viele Versuche. Bitte 5 Minuten warten.")
+            raise HTTPException(429, "Die PIN war zu oft falsch. Bitte warte 5 Minuten und versuch es dann noch einmal.")
         if not profiles.check_pin(str(body.get("pin") or ""), profiles.pin_hash(con, pid)):
             _pin_fail[pid] = fails + [time.time()]
-            raise HTTPException(403, "PIN stimmt nicht.")
+            raise HTTPException(403, "Die PIN stimmt nicht. Bitte versuch es noch einmal.")
         _pin_fail.pop(pid, None)
     _login(response, pid)
     return _public(p, con)
@@ -189,7 +189,7 @@ async def put_me(request: Request, p=Depends(me), con=Depends(con_dep)):
             profiles.update_settings(con, p["id"], st)
         if "pin" in body:
             if p["has_pin"] and not profiles.check_pin(str(body.get("old_pin") or ""), profiles.pin_hash(con, p["id"])):
-                raise profiles.ProfileError("Die bisherige PIN stimmt nicht.")
+                raise profiles.ProfileError("Deine bisherige PIN stimmt nicht. Bitte gib sie noch einmal ein.")
             profiles.set_pin(con, p["id"], body["pin"] or None)
     except profiles.ProfileError as e:
         raise _err(e) from None
@@ -200,9 +200,10 @@ async def put_me(request: Request, p=Depends(me), con=Depends(con_dep)):
 async def delete_me(request: Request, response: Response, p=Depends(me), con=Depends(con_dep)):
     body = await request.json()
     if (body.get("confirm") or "").strip().lower() != p["name"].lower():
-        raise HTTPException(400, "Zum Löschen bitte den Profilnamen eintippen.")
+        raise HTTPException(400, "Zum Löschen bitte den Namen deines Profils genau eintippen. Das schützt vor "
+                                 "versehentlichem Löschen.")
     if p["has_pin"] and not profiles.check_pin(str(body.get("pin") or ""), profiles.pin_hash(con, p["id"])):
-        raise HTTPException(403, "PIN stimmt nicht.")
+        raise HTTPException(403, "Die PIN stimmt nicht. Bitte versuch es noch einmal.")
     profiles.delete(con, p["id"])
     response.delete_cookie(COOKIE)
     return {"ok": True}
@@ -276,7 +277,8 @@ async def price_at(request: Request, p=Depends(me), con=Depends(con_dep)):
     day = pd.Timestamp(h["buy_date"]) if h["buy_date"] else pd.Timestamp.today()
     price = service._price_at(con, h["asset"], day)
     if price != price:
-        raise HTTPException(400, "Für dieses Datum gibt es noch keine Kurse.")
+        raise HTTPException(400, "Für dieses Datum hat die App noch keine Kurse. Wähle ein späteres Datum oder trag "
+                                 "den Kaufpreis selbst ein.")
     return {"value": h["quantity"] * price * service.fx_at(con, cur, day), "currency": cur,
             "fine_g": h["quantity"] * OZ if markets.is_metal(h["asset"]) else None}
 
@@ -290,7 +292,7 @@ def get_overview(p=Depends(me), con=Depends(con_dep)):
 @app.get("/api/market/{asset}")
 def get_market(asset: str, range: str = "1y", p=Depends(me), con=Depends(con_dep)):
     if asset not in ASSETS or range not in ("1d", "1w", "1m", "1y", "5y", "10y", "max"):
-        raise HTTPException(404, "Unbekannt.")
+        raise HTTPException(404, "Diesen Markt oder Zeitraum kennt die App nicht.")
     out = service.market(con, p, asset, range)
     ana = db.kv_get(con, f"analysis:{asset}") or {}
     pdp = service.price_display(con, p, asset)
@@ -352,7 +354,8 @@ async def add_market(request: Request, p=Depends(me), con=Depends(con_dep)):
     except ValueError as e:
         raise _err(e) from None
     except Exception as e:
-        raise HTTPException(502, f"Kursdaten nicht abrufbar ({type(e).__name__}).") from None
+        raise HTTPException(502, f"Die Kurse ließen sich gerade nicht laden ({type(e).__name__}). Bitte versuch es "
+                                 "später noch einmal.") from None
     a = m["id"]
     if db.kv_get(con, f"analysis:{a}") is None:
         try:
@@ -360,7 +363,8 @@ async def add_market(request: Request, p=Depends(me), con=Depends(con_dep)):
             db.kv_set(con, f"analysis:{a}", analysis.analyze_asset(con, a, time.time()))
             con.commit()
         except Exception as e:  # Markt bleibt angelegt; der nächste Lauf holt die Daten nach
-            raise HTTPException(502, f"Markt angelegt, aber Kurse noch nicht geladen: {e}") from None
+            raise HTTPException(502, f"Der Markt ist angelegt, aber die Kurse fehlen noch. Die App lädt sie beim "
+                                     f"nächsten Abruf automatisch nach, meist in wenigen Minuten. ({e})") from None
         service.clear_cache()
     if body.get("watch", True) and a not in p["settings"]["assets"]:
         profiles.update_settings(con, p["id"], {"assets": p["settings"]["assets"] + [a]})
@@ -370,11 +374,12 @@ async def add_market(request: Request, p=Depends(me), con=Depends(con_dep)):
 @app.put("/api/watch/{asset}")
 async def watch(asset: str, request: Request, p=Depends(me), con=Depends(con_dep)):
     if asset not in ASSETS:
-        raise HTTPException(404, "Unbekannter Markt.")
+        raise HTTPException(404, "Diesen Markt kennt die App nicht.")
     on = bool((await _body(request)).get("watch", True))
     cur = [a for a in p["settings"]["assets"] if a != asset] + ([asset] if on else [])
     if not cur:
-        raise HTTPException(400, "Mindestens ein Markt muss beobachtet werden.")
+        raise HTTPException(400, "Du musst mindestens einen Markt beobachten. Füge erst einen anderen hinzu, dann "
+                                 "kannst du diesen entfernen.")
     s = profiles.update_settings(con, p["id"], {"assets": cur})
     return {"watch": s["assets"]}
 
@@ -444,7 +449,8 @@ async def ai_own(request: Request, p=Depends(me), con=Depends(con_dep)):
 @app.put("/api/ai/global")
 async def ai_global(request: Request, p=Depends(me), con=Depends(con_dep)):
     if profiles.admin_id(con) != p["id"]:
-        raise HTTPException(403, "Nur das Admin-Profil darf den gemeinsamen Zugang ändern.")
+        raise HTTPException(403, "Den gemeinsamen KI-Zugang darf nur das Admin-Profil ändern. Das ist meist das "
+                                 "Profil, das zuerst angelegt wurde.")
     try:
         assistant.set_global(con, await _body(request))
     except assistant.AIError as e:
@@ -458,7 +464,7 @@ async def ai_test(request: Request, p=Depends(me), con=Depends(con_dep)):
     scope = (await _body(request)).get("scope", "own")
     if scope == "global":
         if profiles.admin_id(con) != p["id"]:
-            raise HTTPException(403, "Nur das Admin-Profil.")
+            raise HTTPException(403, "Das darf nur das Admin-Profil.")
         c = {**assistant.global_conf(con), "key": profiles.secret_get(con, "global", "ai_key")}
     else:
         own = p["settings"].get("ai") or {}
@@ -466,11 +472,12 @@ async def ai_test(request: Request, p=Depends(me), con=Depends(con_dep)):
              "effort": own.get("effort", ""), "max_tokens": own.get("max_tokens", 8000),
              "key": profiles.secret_get(con, f"profile:{p['id']}", "ai_key")}
     if not c["base_url"]:
-        raise HTTPException(400, "Bitte zuerst eine Adresse eintragen.")
+        raise HTTPException(400, "Bitte trag zuerst die Adresse des KI-Servers ein.")
     if scope != "global" and not assistant.is_local(c["base_url"]) and not (p["settings"].get("ai") or {}).get("consent"):
-        raise HTTPException(400, "Der Server liegt außerhalb deines Heimnetzes – bitte erst zustimmen.")
+        raise HTTPException(400, "Der KI-Server steht nicht in deinem Heimnetz. Bitte stimm erst zu, dass deine "
+                                 "Daten dorthin geschickt werden dürfen.")
     c.setdefault("model", "")
-    return assistant.test(c) if c["model"] else {"ok": False, "models": assistant.list_models(c), "error": "Bitte ein Modell wählen."}
+    return assistant.test(c) if c["model"] else {"ok": False, "models": assistant.list_models(c), "error": "Bitte wähle ein Modell aus der Liste."}
 
 
 @app.get("/api/ai/history")
@@ -498,7 +505,8 @@ async def ai_chat(request: Request, p=Depends(me)):
             for ev in assistant.chat(con, prof, msg, page):
                 yield "data: " + json.dumps(_clean(ev), ensure_ascii=False) + "\n\n"
         except Exception as e:  # noqa: BLE001 – Fehler als Ereignis an die Seite
-            yield "data: " + json.dumps({"type": "error", "text": f"Interner Fehler: {type(e).__name__}"}) + "\n\n"
+            yield "data: " + json.dumps({"type": "error", "text": f"Da ist etwas schiefgelaufen ({type(e).__name__}). "
+                                                          "Bitte versuch es noch einmal."}) + "\n\n"
         finally:
             con.close()
 
@@ -511,7 +519,7 @@ async def ai_chat(request: Request, p=Depends(me)):
 def tg_link(p=Depends(me), con=Depends(con_dep)):
     bot = telegram.bot_username(con)
     if not bot:
-        raise HTTPException(400, "Telegram-Bot ist nicht eingerichtet.")
+        raise HTTPException(400, "Der Telegram-Bot ist noch nicht eingerichtet. Das muss der Admin erst erledigen.")
     code = profiles.new_link_code(con, p["id"])
     return {"url": f"https://t.me/{bot}?start={code}", "bot": bot, "code": code}
 
@@ -532,19 +540,20 @@ def tg_preview(p=Depends(me), con=Depends(con_dep)):
 @app.post("/api/telegram/test")
 def tg_test(p=Depends(me), con=Depends(con_dep)):
     if not p["tg_chat_id"]:
-        raise HTTPException(400, "Telegram ist noch nicht verbunden.")
+        raise HTTPException(400, "Telegram ist noch nicht verbunden. Tippe zuerst auf „Telegram verbinden“.")
     text = telegram.report_text(con, p)
     ok = telegram.send(p["tg_chat_id"], text)
     telegram.log_send(con, p["id"], "report_manual", "web", text, ok)
     if not ok:
-        raise HTTPException(502, "Senden fehlgeschlagen.")
+        raise HTTPException(502, "Die Nachricht ließ sich nicht senden. Bitte versuch es später noch einmal.")
     return {"ok": True}
 
 
 @app.delete("/api/telegram")
 def tg_unlink(p=Depends(me), con=Depends(con_dep)):
     if p["tg_chat_id"]:
-        telegram.send(p["tg_chat_id"], "👋 Vom Profil getrennt. Du bekommst keine Nachrichten mehr.")
+        telegram.send(p["tg_chat_id"], "👋 Dieser Chat ist jetzt von deinem Profil getrennt. Du bekommst keine "
+                                         "Nachrichten mehr. Neu verbinden kannst du jederzeit auf der Website.")
     profiles.set_chat(con, p["id"], None)
     return {"ok": True}
 

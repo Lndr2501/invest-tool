@@ -19,7 +19,7 @@ from .calculator import MONTH, Costs, Plan, default_costs, simulate
 from .config import ASSETS
 from .units import OZ, UNIT_LABEL, fineness_label, fmt_money, fmt_num, price_per
 
-DRIFTS = {"careful": "vorsichtig", "historic": "wie bisher", "none": "ohne Trend"}
+DRIFTS = {"careful": "vorsichtig", "historic": "wie bisher", "none": "gleich null (nur Schwankung)"}
 _CACHE: dict = {}
 
 
@@ -190,7 +190,7 @@ def holding_title(h: dict) -> tuple[str, str]:
                 title = f"{kind} {w} {h['unit']}" + (f" ({cnt} Stück)" if h["count"] != 1 else "")
             if h.get("label"):
                 title = f"{title} – {h['label']}"
-        sub = f"{metal} {fineness_label(h['fineness'])} · {_n(fine_g, 2)} g fein"
+        sub = f"{metal} {fineness_label(h['fineness'])} · {_n(fine_g, 2)} g reines {metal}"
         return title, sub
     q = h["quantity"]
     if m["kind"] == "crypto":
@@ -526,18 +526,19 @@ def calc_future(con, profile: dict, req: dict) -> dict:
                     + (f" und zahlst {fmt_money(contrib, cur)} dazu." if contrib > 0 else "."))
     else:
         text.append(f"Du zahlst insgesamt {fmt_money(contrib, cur)} ein.")
-    text.append(f"Im mittleren Fall hast du nach {years} Jahr{'en' if years > 1 else ''} etwa "
-                f"{fmt_money(p50, cur)} – {'mehr' if p50 >= res['invested'] else 'weniger'} als eingesetzt "
-                f"({fmt_money(p50 - res['invested'], cur)}).")
-    text.append(f"In der Hälfte der Fälle liegt das Ergebnis zwischen {fmt_money(end[25], cur)} und "
-                f"{fmt_money(end[75], cur)}, in 9 von 10 Fällen zwischen {fmt_money(end[5], cur)} und "
+    text.append(f"Im mittleren Verlauf hast du nach {years} Jahr{'en' if years > 1 else ''} etwa "
+                f"{fmt_money(p50, cur)}. Das ist {'mehr' if p50 >= res['invested'] else 'weniger'} als eingesetzt "
+                f"(Unterschied {fmt_money(p50 - res['invested'], cur)}).")
+    text.append(f"Die Hälfte der durchgespielten Verläufe endet zwischen {fmt_money(end[25], cur)} und "
+                f"{fmt_money(end[75], cur)}. In 9 von 10 Fällen landest du zwischen {fmt_money(end[5], cur)} und "
                 f"{fmt_money(end[95], cur)}.")
-    text.append(f"Die Chance, am Ende weniger zu haben als eingesetzt: {fmt_num(res['p_loss'] * 100, 0)} %.")
-    text.append(f"Unterwegs fällt das Depot im mittleren Fall einmal um {fmt_num(-res['max_dd'][50] * 100, 0)} % "
-                f"vom Höchststand, im schlechten Fall (1 von 20) um {fmt_num(-res['max_dd'][5] * 100, 0)} %.")
+    text.append(f"In {fmt_num(res['p_loss'] * 100, 0)} % der Verläufe hast du am Ende weniger als eingesetzt.")
+    text.append(f"Zwischendurch fällt der Wert im mittleren Verlauf einmal {fmt_num(-res['max_dd'][50] * 100, 0)} % "
+                f"unter sein bisheriges Hoch. Im schlechten Fall (1 von 20) sind es {fmt_num(-res['max_dd'][5] * 100, 0)} %.")
     if infl:
-        text.append(f"In heutiger Kaufkraft (Inflation {fmt_num(infl * 100, 1)} % pro Jahr) ist der mittlere Fall "
-                    f"{fmt_money(res['real_after_tax'][50] if key == 'after_tax' else p50 / res['deflator'], cur)} wert.")
+        text.append(f"In heutigem Geld ist der mittlere Verlauf etwa "
+                    f"{fmt_money(res['real_after_tax'][50] if key == 'after_tax' else p50 / res['deflator'], cur)} wert, "
+                    f"wenn die Preise weiter um {fmt_num(infl * 100, 1)} % pro Jahr steigen (Inflation).")
     stress = _stress(con, plan, assets, w, today)
     return {
         "net_label": _net_label(tax, req), "currency": cur, "years": years, "invested": res["invested"], "start_value": res["start_value"],
@@ -612,12 +613,12 @@ def calc_goal(con, profile: dict, req: dict) -> dict:
            "assumptions": {"drift": drift_label, "n_sims": int(n), "history_from": hist_from,
                            "costs": bool(req.get("costs", True)), "tax": "vor Steuern"}}
     out["text"] = [
-        f"Für {fmt_money(goal, cur)} in {years} Jahren brauchst du im mittleren Fall etwa "
+        f"Für {fmt_money(goal, cur)} in {years} Jahren reichen in der Hälfte der Fälle etwa "
         f"{fmt_money(out['monthly_50'], cur)} im Monat.",
         f"Willst du es in 9 von 10 Fällen schaffen, plane mit {fmt_money(out['monthly_90'], cur)} im Monat.",
-        f"Ganz ohne Anlage (nur zurücklegen) wären es {fmt_money(out['no_risk'], cur)} im Monat.",
-        f"Achtung Inflation: {fmt_money(goal, cur)} in {years} Jahren entsprechen heute etwa "
-        f"{fmt_money(out['goal_real'], cur)}.",
+        f"Legst du das Geld nur zur Seite, ohne es anzulegen, brauchst du {fmt_money(out['no_risk'], cur)} im Monat.",
+        f"Wegen der Inflation (steigende Preise) kaufst du mit {fmt_money(goal, cur)} in {years} Jahren nur so viel "
+        f"wie heute mit {fmt_money(out['goal_real'], cur)}.",
     ]
     return out
 
@@ -639,12 +640,12 @@ def calc_past(con, profile: dict, req: dict) -> dict:
     notes = []
     if want < closes.index[0]:
         late = max(w, key=lambda a: closes_all[a].first_valid_index())
-        notes.append(f"Kurse für {ASSETS[late]['name']} gibt es erst ab {closes.index[0].strftime('%m/%Y')} – "
-                     f"Start dorthin verschoben.")
+        notes.append(f"Kurse für {ASSETS[late]['name']} gibt es erst ab {closes.index[0].strftime('%m/%Y')}, "
+                     f"deshalb beginnt die Rechnung dort.")
         want = closes.index[0]
     closes = closes[closes.index >= want]
     if len(closes) < 40:
-        raise ValueError("Der Zeitraum ist zu kurz – bitte ein früheres Startdatum wählen.")
+        raise ValueError("Der Zeitraum ist zu kurz. Bitte wähle ein früheres Startdatum.")
     fx = fx_on(con, cur, closes.index)
     px = closes.values * fx[:, None]
     H = len(closes) - 1
@@ -710,17 +711,17 @@ def calc_past(con, profile: dict, req: dict) -> dict:
     text = [f"Start am {start_s}: Du hättest {fmt_money(res['invested'], cur)} eingezahlt"
             + (f" ({fmt_money(initial, cur)} zu Beginn" if initial else " (")
             + (f"{', dann ' if initial else ''}{fmt_money(monthly, cur)} im Monat)" if monthly else ")") + ".",
-            f"Heute wäre das {fmt_money(final, cur)} wert – "
+            f"Heute wäre das {fmt_money(final, cur)} wert: "
             f"{'ein Plus' if final >= res['invested'] else 'ein Minus'} von {fmt_money(abs(final - res['invested']), cur)} "
             f"({'+' if final >= res['invested'] else '−'}{fmt_num(abs(final / res['invested'] - 1) * 100, 0)} %)."]
     if rel[k_rel] < -0.005:
-        text.append(f"Der schwierigste Moment: am {pd.Timestamp(dates[k_rel]).strftime('%d.%m.%Y')} lag das Depot "
-                    f"{fmt_num(-rel[k_rel] * 100, 0)} % unter dem Eingezahlten.")
-    text.append(f"Der größte Rückgang vom Höchststand betrug {fmt_num(-dd[k_dd] * 100, 0)} % "
+        text.append(f"Der schwierigste Moment: Am {pd.Timestamp(dates[k_rel]).strftime('%d.%m.%Y')} war dein Geld "
+                    f"{fmt_num(-rel[k_rel] * 100, 0)} % weniger wert, als du eingezahlt hattest.")
+    text.append(f"Größter Absturz vom Hoch: {fmt_num(-dd[k_dd] * 100, 0)} % unter dem bisherigen Höchststand "
                 f"(Tiefpunkt {pd.Timestamp(dates[k_dd]).strftime('%m/%Y')}).")
     if real_needed:
-        text.append(f"Um nur die Kaufkraft zu erhalten, hätte das Geld {fmt_money(real_needed, cur)} wert sein müssen "
-                    f"(Inflation {s['inflation_geo']}).")
+        text.append(f"Nur um die steigenden Preise auszugleichen, hätte dein Geld heute {fmt_money(real_needed, cur)} "
+                    f"wert sein müssen (Inflation {s['inflation_geo']}).")
     return {"net_label": _net_label(tax, req), "currency": cur, "start": closes.index[0].strftime("%Y-%m-%d"), "end": closes.index[-1].strftime("%Y-%m-%d"),
             "years": round(yrs, 1), "invested": res["invested"], "final": final, "final_pre_tax": res["payout"][50],
             "tax": res["tax"][50], "real_needed": real_needed, "compare": compare,
@@ -839,11 +840,12 @@ def asset_story(con, asset: str, ana: dict, change: dict) -> list[str]:
     if v.get("vol30"):
         month = v["vol30"] / math.sqrt(12) * 100
         pctl = (v.get("percentile") or 0) * 100
-        s = f"Die Kurse sind gerade {VOL_TEXT.get(v.get('label'), v.get('label'))}: typisch ±{fmt_num(month, 0)} % pro Monat"
+        s = (f"Schwankung gerade: {VOL_TEXT.get(v.get('label'), v.get('label'))}, in einem typischen Monat geht der "
+             f"Kurs etwa {fmt_num(month, 0)} % hoch oder runter")
         if pctl >= 80:
-            s += f", unruhiger als an {fmt_num(pctl, 0)} % aller Tage seit {ana.get('history_since', '')[:4]}"
+            s += f". Das ist unruhiger als an {fmt_num(pctl, 0)} % aller Tage seit {ana.get('history_since', '')[:4]}"
         elif pctl <= 20:
-            s += f", ruhiger als an {fmt_num(100 - pctl, 0)} % aller Tage seit {ana.get('history_since', '')[:4]}"
+            s += f". Das ist ruhiger als an {fmt_num(100 - pctl, 0)} % aller Tage seit {ana.get('history_since', '')[:4]}"
         out.append(s + ".")
     d = ana.get("drawdown") or {}
     if d.get("current") is not None:
@@ -852,8 +854,8 @@ def asset_story(con, asset: str, ana: dict, change: dict) -> list[str]:
             out.append("Der Kurs ist nahe am Rekordhoch.")
         else:
             ath = pd.Timestamp(d["ath_date"]).strftime("%m/%Y") if d.get("ath_date") else ""
-            out.append(f"Der Kurs liegt {fmt_num(-cur * 100, 0)} % unter dem Rekordhoch ({ath}). "
-                       f"Der größte Absturz bisher: {fmt_num(-d.get('max_dd', 0) * 100, 0)} %.")
+            out.append(f"Der Kurs liegt {fmt_num(-cur * 100, 0)} % unter seinem Rekordhoch ({ath}). "
+                       f"Der größte Absturz vom Hoch bisher: {fmt_num(-d.get('max_dd', 0) * 100, 0)} %.")
     return out
 
 
@@ -892,17 +894,17 @@ def headline(rows: list[dict]) -> list[str]:
         c = r["change"]["24h"]
         out.append(f"Größte Bewegung: {r['short']} {'+' if c >= 0 else '−'}{fmt_num(abs(c) * 100, 1)} % in 24 Stunden.")
     else:
-        out.append("Ruhiger Tag: keiner deiner Märkte hat sich in 24 Stunden um mehr als 2 % bewegt.")
+        out.append("Ruhiger Tag: Keiner deiner Märkte hat sich in 24 Stunden um mehr als 2 % bewegt.")
     up = sum(1 for r in rows if r["word"] == "steigt")
     down = sum(1 for r in rows if r["word"] == "fällt")
     n = len(rows)
     if down > n / 2:
-        out.append(f"{down} von {n} deiner Märkte fallen seit einiger Zeit. Das ist normal – entscheidend ist, "
-                   f"wie lange du das Geld nicht brauchst.")
+        out.append(f"{down} von {n} deiner Märkte fallen seit einiger Zeit; ein Problem ist das nur, "
+                   f"wenn du das Geld bald brauchst.")
     elif up > n / 2:
-        out.append(f"{up} von {n} deiner Märkte steigen seit einiger Zeit. Gute Phasen enden aber auch wieder.")
+        out.append(f"{up} von {n} deiner Märkte steigen seit einiger Zeit; solche guten Phasen enden aber auch wieder.")
     else:
-        out.append("Gemischtes Bild: manche Märkte steigen, manche fallen.")
+        out.append("Gemischtes Bild: Manche deiner Märkte steigen, andere fallen.")
     wild = [r["short"] for r in rows if r["vol"] == "wild"]
     if wild and len(wild) >= max(2, n // 2):
         out.append("Die Kurse schwanken gerade stärker als üblich.")
@@ -917,54 +919,58 @@ def next_steps(con, profile: dict, pf: dict) -> list[dict]:
     out = []
     if f.get("debt"):
         out.append({"title": "Erst teure Schulden loswerden",
-                    "text": f"Du hast {fmt_money(f['debt'], cur)} Schulden eingetragen. Dispo- oder Ratenkredite kosten "
-                            "meist mehr Zinsen, als eine Anlage sicher bringt. Tilgen ist hier die beste „Rendite“.",
+                    "text": f"Du hast {fmt_money(f['debt'], cur)} Schulden eingetragen. Dispo- und Ratenkredite kosten "
+                            "meist mehr Zinsen, als eine Geldanlage sicher bringt.",
                     "link": "#/assistent", "action": "Mit dem Assistenten planen"})
     if f.get("expenses") and (f.get("cash") or 0) < 3 * f["expenses"]:
         need = 3 * f["expenses"] - (f.get("cash") or 0)
         out.append({"title": "Notgroschen zuerst",
-                    "text": f"Leg dir 3 Monatsausgaben auf ein Tagesgeldkonto ({fmt_money(3 * f['expenses'], cur)}). "
-                            f"Dir fehlen noch etwa {fmt_money(need, cur)}. Erst dann lohnt sich das Anlegen.",
+                    "text": f"Leg 3 Monatsausgaben ({fmt_money(3 * f['expenses'], cur)}) als Reserve auf ein Tagesgeldkonto, "
+                            f"ein Sparkonto, an das du jederzeit kommst. Dir fehlen noch etwa {fmt_money(need, cur)}, "
+                            "erst danach lohnt sich das Anlegen.",
                     "link": "#/rechner/budget", "action": "Sparrate ausrechnen"})
     if pf["empty"]:
         if not f.get("goals") and not f.get("income"):
             out.append({"title": "Du fängst gerade an?",
-                        "text": "In 5 kurzen Fragen findest du heraus, wofür du sparst, wie lange und wie viel im Monat "
-                                "sinnvoll ist – mit einem Beispiel, was daraus werden kann.",
-                        "link": "#/start", "action": "Plan-Assistent starten"})
+                        "text": "Beantworte 5 kurze Fragen, dann bekommst du einen ersten Plan. Er zeigt, wie viel du "
+                                "im Monat sparen kannst und was daraus werden könnte.",
+                        "link": "#/start", "action": "Plan in 5 Fragen"})
         else:
             out.append({"title": "Noch nichts angelegt",
-                        "text": "Trag ein, was du schon hast – oder lege einen Sparplan an, um zu sehen, wie er sich "
-                                "entwickeln würde.", "link": "#/bestand", "action": "Zum Bestand"})
+                        "text": "Trag ein, was du schon besitzt. Oder leg einen Sparplan an (jeden Monat ein fester "
+                                "Betrag) und sieh, was daraus werden könnte.", "link": "#/bestand", "action": "Zum Bestand"})
     else:
         top = pf["alloc"][0] if pf["alloc"] else None
         if top and top["share"] > 0.7:
             out.append({"title": f"{fmt_num(top['share'] * 100, 0)} % in {top['name']}",
-                        "text": "Fast alles steckt in einer Anlage. Fällt sie, fällt dein ganzer Bestand mit. "
-                                "Im Rechner siehst du, wie eine Mischung schwankt.",
+                        "text": "Fast alles steckt in einer Anlage: Fällt sie, fällt dein ganzer Bestand mit. "
+                                "Im Rechner siehst du, wie viel ruhiger eine Mischung aus mehreren Anlagen sein kann.",
                         "link": "#/rechner/future?use_holdings=1", "action": "Mischung durchrechnen"})
         crypto = sum(a["share"] for a in pf["alloc"] if a.get("kind") == "crypto")
         if crypto > 0.3:
             out.append({"title": f"{fmt_num(crypto * 100, 0)} % in Krypto",
-                        "text": "Rückgänge um 70–80 % gab es bei Krypto schon mehrmals. Plane nur Geld ein, das du "
-                                "jahrelang nicht brauchst.", "link": "#/maerkte/BTC", "action": "Größte Abstürze ansehen"})
+                        "text": "Krypto ist schon mehrmals um 70–80 % abgestürzt, aus 1.000 € wurden also 200–300 €. "
+                                "Steck nur Geld hinein, das du jahrelang nicht brauchst.", "link": "#/maerkte/BTC",
+                        "action": "Größte Abstürze ansehen"})
         if not pf["plans"]:
             out.append({"title": "Regelmäßig sparen?",
-                        "text": "Mit einer festen Sparrate kaufst du automatisch mal teuer, mal günstig. "
-                                "Rechne aus, was 50 € im Monat werden könnten.",
+                        "text": "Mit einem Sparplan legst du jeden Monat automatisch einen festen Betrag an. "
+                                "Rechne aus, was aus 50 € im Monat werden könnte.",
                         "link": "#/rechner/future?monthly=50&initial=0", "action": "Sparrate durchrechnen"})
         if pf["missing_date"]:
             out.append({"title": "Kaufdatum fehlt",
-                        "text": f"{pf['missing_date']} Position(en) ohne Kaufdatum fehlen im Verlauf.",
-                        "link": "#/bestand", "action": "Ergänzen"})
+                        "text": f"Bei {pf['missing_date']} deiner Anlagen fehlt das Kaufdatum. Ohne Datum können sie "
+                                "nicht im Verlauf erscheinen.", "link": "#/bestand", "action": "Kaufdatum ergänzen"})
     if not f.get("goals"):
         out.append({"title": "Wofür sparst du?",
-                    "text": "Mit einem Ziel (Betrag und Zeitpunkt) kann dir der Ratgeber sagen, ob du auf Kurs bist.",
+                    "text": "Leg ein Ziel fest, zum Beispiel 10.000 € in 5 Jahren. Dann zeigt dir der Ratgeber, "
+                            "ob deine Sparrate reicht.",
                     "link": "#/ziele", "action": "Ziel festlegen"})
     if not profile.get("tg_chat_id"):
         out.append({"title": "Bericht aufs Handy",
-                    "text": "Verbinde Telegram: Du bekommst deinen Bericht in deiner Einheit und nur bei wirklich großen "
-                            "Bewegungen eine Nachricht.", "link": "#/einstellungen", "action": "Telegram verbinden"})
+                    "text": "Verbinde die Chat-App Telegram. Dann bekommst du regelmäßig einen kurzen Bericht und nur "
+                            "bei großen Kurssprüngen eine Nachricht.", "link": "#/einstellungen",
+                    "action": "Telegram verbinden"})
     return out[:4]
 
 
@@ -999,10 +1005,10 @@ def goal_status(profile: dict, pf: dict) -> dict | None:
     cur = s["currency"]
     on_track = planned >= plan["monthly"] * 0.95 if planned else None
     text = (f"Für „{g['name']}“ ({fmt_money(g['amount'], cur)} in {_n(g['years'], 1)} Jahren) brauchst du etwa "
-            f"{fmt_money(plan['monthly'], cur)} im Monat – gerechnet mit {fmt_num(plan['rate'] * 100, 1)} % pro Jahr "
-            f"({plan['label']}).")
+            f"{fmt_money(plan['monthly'], cur)} im Monat. Gerechnet ist mit {fmt_num(plan['rate'] * 100, 1)} % "
+            f"Wertzuwachs pro Jahr ({plan['label']}).")
     if planned:
-        text += f" Geplant sind {fmt_money(planned, cur)}: " + ("das reicht." if on_track else "das reicht noch nicht.")
+        text += f" Du hast {fmt_money(planned, cur)} im Monat eingeplant, " + ("das reicht." if on_track else "das reicht noch nicht.")
     return {"goal": g, "monthly": plan["monthly"], "planned": planned, "on_track": on_track, "text": text,
             "count": len(goals)}
 
@@ -1037,6 +1043,16 @@ def market_list(con, profile: dict) -> list[dict]:
     return out
 
 
+# Anzeigenamen der Richtungsmodelle aus dem Backtest (die Namen dort bleiben als Kennung gespeichert)
+MODEL_TEXT = {
+    "Immer steigt": "Steigt immer",
+    "Momentum 3 Monate": "Momentum: Trend der letzten 3 Monate",
+    "Über 200-Tage-Linie": "200-Tage-Linie: Kurs über dem Schnitt",
+    "Logistische Regression": "Lernmodell (einfach)",
+    "Gradient Boosting": "Lernmodell (aufwendig)",
+}
+
+
 def methodik(con, assets: list[str] | None = None) -> dict:
     out = {}
     for a in assets or list(ASSETS):
@@ -1050,7 +1066,8 @@ def methodik(con, assets: list[str] | None = None) -> dict:
         dirs = []
         for d in bt.get("direction", []):
             best = max((m for m in d["models"] if m["name"] != "Immer steigt"), key=lambda m: m["hit"], default=None)
-            dirs.append({"days": d["horizon_days"], "base": d["base_rate_up"], "best": best and best["name"],
+            dirs.append({"days": d["horizon_days"], "base": d["base_rate_up"],
+                         "best": best and MODEL_TEXT.get(best["name"], best["name"]),
                          "best_hit": best and best["hit"], "approved": any(m["approved"] for m in d["models"])})
         ma = None
         for d in bt.get("direction", []):

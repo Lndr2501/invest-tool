@@ -138,15 +138,15 @@ part(() => ({
       const inv = r.rows.map((x) => Math.min(x.invested, x.p50));
       const gain = r.rows.map((x) => Math.max(x.p50 - x.invested, 0));
       c.setOption(this.base(t, {
-        legend: { top: 0, left: 0, data: ["Eingesetzt", "Zuwachs (mittlerer Fall)"], textStyle: { color: t.ink2 }, icon: "roundRect" },
+        legend: { top: 0, left: 0, data: ["Eingezahlt", "Zuwachs (mittlerer Verlauf)"], textStyle: { color: t.ink2 }, icon: "roundRect" },
         grid: { left: 6, right: 12, top: 44, bottom: 8, containLabel: true },
         tooltip: this.tip(t, { axisPointer: { type: "shadow" },
-          formatter: (ps) => { const x = r.rows[ps[0].dataIndex]; return `<b>${x.year}</b> (nach ${x.n} J.)<br>Eingesetzt: ${this.money(x.invested)}<br>Mittlerer Fall: <b>${this.money(x.p50)}</b><br>9 von 10 Fällen: ${this.money(x.p5)} – ${this.money(x.p95)}`; } }),
+          formatter: (ps) => { const x = r.rows[ps[0].dataIndex]; return `<b>${x.year}</b> (nach ${x.n} J.)<br>Eingezahlt: ${this.money(x.invested)}<br>Mittlerer Verlauf: <b>${this.money(x.p50)}</b><br>In 9 von 10 Fällen: ${this.money(x.p5)} – ${this.money(x.p95)}`; } }),
         xAxis: { type: "category", data: years, axisLabel: { color: t.muted }, axisLine: { lineStyle: { color: t.line } }, axisTick: { show: false } },
         yAxis: this.valueAxis(t),
         series: [
-          { name: "Eingesetzt", type: "bar", stack: "a", data: inv, itemStyle: { color: t.invest, borderColor: t.surface, borderWidth: 1 }, barMaxWidth: 26 },
-          { name: "Zuwachs (mittlerer Fall)", type: "bar", stack: "a", data: gain, itemStyle: { color: t.depot, borderRadius: [4, 4, 0, 0], borderColor: t.surface, borderWidth: 1 }, barMaxWidth: 26 },
+          { name: "Eingezahlt", type: "bar", stack: "a", data: inv, itemStyle: { color: t.invest, borderColor: t.surface, borderWidth: 1 }, barMaxWidth: 26 },
+          { name: "Zuwachs (mittlerer Verlauf)", type: "bar", stack: "a", data: gain, itemStyle: { color: t.depot, borderRadius: [4, 4, 0, 0], borderColor: t.surface, borderWidth: 1 }, barMaxWidth: 26 },
         ],
       }), true);
       return;
@@ -155,33 +155,33 @@ part(() => ({
     const diff = (a, b) => d.map((x, i) => [x, a[i] - b[i]]);
     const cap = Math.max(...f.p75) * 2.5, top = Math.max(...f.p95);
     const capped = top > cap;
-    this.fanNote = capped ? `Die besten Fälle reichen bis ${this.money(top)}. Die Fläche ist oben abgeschnitten, damit der Rest lesbar bleibt.`
-      : "Dunkle Fläche: die mittlere Hälfte aller Verläufe. Helle Fläche: 9 von 10 Verläufen.";
+    this.fanNote = capped ? `Die besten Verläufe reichen bis ${this.money(top)}. Das Bild ist oben abgeschnitten, damit der Rest lesbar bleibt.`
+      : "Linie: mittlerer Verlauf. Dunkle Fläche: Hier landet die Hälfte der Verläufe. Helle Fläche: Hier landen 9 von 10.";
     const last = f.p50.length - 1;
     const hidden = { lineStyle: { opacity: 0 }, symbol: "none", silent: true, tooltip: { show: false } };
     c.setOption(this.base(t, {
       legend: { top: 0, left: 0, textStyle: { color: t.ink2 }, icon: "roundRect", itemWidth: 14, itemHeight: 10,
-        data: ["Mittlerer Fall", "Hälfte der Fälle", "9 von 10 Fällen", "Eingesetzt"] },
+        data: ["Mittlerer Verlauf", "Hälfte der Fälle", "In 9 von 10 Fällen", "Eingezahlt"] },
       tooltip: this.tip(t, {
         formatter: (ps) => {
           const i = ps[0].dataIndex;
           const dt = new Date(d[i]);
-          return `<b>${dt.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</b><br>Mittlerer Fall: <b>${this.money(f.p50[i])}</b><br>` +
-            `Hälfte der Fälle: ${this.money(f.p25[i])} – ${this.money(f.p75[i])}<br>9 von 10 Fällen: ${this.money(f.p5[i])} – ${this.money(f.p95[i])}<br>Eingesetzt: ${this.money(f.invested[i])}`;
+          return `<b>${dt.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</b><br>Mittlerer Verlauf: <b>${this.money(f.p50[i])}</b><br>` +
+            `Hälfte der Fälle: ${this.money(f.p25[i])} – ${this.money(f.p75[i])}<br>In 9 von 10 Fällen: ${this.money(f.p5[i])} – ${this.money(f.p95[i])}<br>Eingezahlt: ${this.money(f.invested[i])}`;
         } }),
       xAxis: this.timeAxis(t),
       yAxis: this.valueAxis(t, capped ? { max: Math.ceil(cap / Math.pow(10, Math.floor(Math.log10(cap)))) * Math.pow(10, Math.floor(Math.log10(cap))) } : {}),
       series: [
         Object.assign({ name: "_p5", type: "line", stack: "o", data: z(f.p5) }, hidden),
-        { name: "9 von 10 Fällen", type: "line", stack: "o", data: diff(f.p95, f.p5), symbol: "none", lineStyle: { opacity: 0 },
+        { name: "In 9 von 10 Fällen", type: "line", stack: "o", data: diff(f.p95, f.p5), symbol: "none", lineStyle: { opacity: 0 },
           areaStyle: { color: t.band1 }, itemStyle: { color: t.band1 }, tooltip: { show: false } },
         Object.assign({ name: "_p25", type: "line", stack: "i", data: z(f.p25) }, hidden),
         { name: "Hälfte der Fälle", type: "line", stack: "i", data: diff(f.p75, f.p25), symbol: "none", lineStyle: { opacity: 0 },
           areaStyle: { color: t.band2 }, itemStyle: { color: t.band2 }, tooltip: { show: false } },
-        { name: "Mittlerer Fall", type: "line", data: z(f.p50), symbol: "none", lineStyle: { color: t.depot, width: 2.5 }, itemStyle: { color: t.depot },
-          endLabel: this.endLabel(t.ink, () => "Mittel\n" + this.compact(f.p50[last])) },
-        { name: "Eingesetzt", type: "line", data: z(f.invested), symbol: "none", step: "end", lineStyle: { color: t.invest, width: 2, type: "dashed" },
-          itemStyle: { color: t.invest }, endLabel: this.endLabel(t.ink2, () => "Eingesetzt\n" + this.compact(f.invested[last])) },
+        { name: "Mittlerer Verlauf", type: "line", data: z(f.p50), symbol: "none", lineStyle: { color: t.depot, width: 2.5 }, itemStyle: { color: t.depot },
+          endLabel: this.endLabel(t.ink, () => "Mitte\n" + this.compact(f.p50[last])) },
+        { name: "Eingezahlt", type: "line", data: z(f.invested), symbol: "none", step: "end", lineStyle: { color: t.invest, width: 2, type: "dashed" },
+          itemStyle: { color: t.invest }, endLabel: this.endLabel(t.ink2, () => "Eingezahlt\n" + this.compact(f.invested[last])) },
       ],
     }), true);
   },
@@ -192,7 +192,7 @@ part(() => ({
     const last = s.value.length - 1;
     c.setOption(this.base(t, {
       legend: { top: 0, left: 0, data: ["Wert", "Eingezahlt"], textStyle: { color: t.ink2 }, icon: "roundRect", itemWidth: 14, itemHeight: 10 },
-      tooltip: this.tip(t, { formatter: (ps) => { const i = ps[0].dataIndex; return `<b>${this.dateStr(d[i])}</b><br>Wert: <b>${this.money(s.value[i])}</b><br>Eingezahlt: ${this.money(s.invested[i])}<br>${this.signMoney(s.value[i] - s.invested[i])}`; } }),
+      tooltip: this.tip(t, { formatter: (ps) => { const i = ps[0].dataIndex; return `<b>${this.dateStr(d[i])}</b><br>Wert: <b>${this.money(s.value[i])}</b><br>Eingezahlt: ${this.money(s.invested[i])}<br>Plus/Minus: ${this.signMoney(s.value[i] - s.invested[i])}`; } }),
       xAxis: this.timeAxis(t), yAxis: this.valueAxis(t),
       series: [
         { name: "Wert", type: "line", data: z(s.value), symbol: "none", lineStyle: { color: t.depot, width: 2 }, itemStyle: { color: t.depot },
@@ -206,10 +206,10 @@ part(() => ({
     const c = this.chart("ch-compare"); if (!c) return;
     const t = this.theme(), r = this.res;
     const cols = this.seriesColors(r.compare.map((x) => x.asset));
-    const rows = [{ name: "Deine Aufteilung", v: r.final, color: t.depot }];
+    const rows = [{ name: "Deine Mischung", v: r.final, color: t.depot }];
     for (const x of r.compare) if (x.final !== null) rows.push({ name: "Nur " + this.shortName(x.asset), v: x.final, color: cols[x.asset] });
-    rows.push({ name: "Nur gespart (0 %)", v: r.invested, color: t.invest });
-    if (r.real_needed) rows.push({ name: "Kaufkraft erhalten", v: r.real_needed, color: t.invest });
+    rows.push({ name: "Ohne Zinsen gespart", v: r.invested, color: t.invest });
+    if (r.real_needed) rows.push({ name: "Inflation ausgeglichen", v: r.real_needed, color: t.invest });
     rows.reverse();
     const narrow = c.getWidth() < 520;
     c.setOption({

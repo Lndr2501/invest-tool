@@ -25,9 +25,9 @@ REGISTRY: dict[str, dict] = {}
 CATEGORIES = [
     ("build", "Vermögen aufbauen"),
     ("past", "Rückblick"),
-    ("plan", "Planen"),
+    ("plan", "Budget und Rente planen"),
     ("cost", "Kosten & Steuern"),
-    ("learn", "Verstehen"),
+    ("learn", "Grundlagen verstehen"),
 ]
 _MODULES = ["sims", "basics", "planning", "taxes"]
 
@@ -71,7 +71,7 @@ def defaults(cid: str, profile: dict | None = None) -> dict:
 def run(con, profile: dict, cid: str, inputs: dict) -> dict:
     _load()
     if cid not in REGISTRY:
-        raise CalcError("Unbekannter Rechner.")
+        raise CalcError("Diesen Rechner gibt es nicht.")
     c = REGISTRY[cid]
     fields = c["fields"](profile) if callable(c["fields"]) else c["fields"]
     vals = {}
@@ -82,7 +82,7 @@ def run(con, profile: dict, cid: str, inputs: dict) -> dict:
             try:
                 v = float(v) if v not in (None, "") else None
             except (TypeError, ValueError):
-                raise CalcError(f"„{f['label']}“ muss eine Zahl sein.") from None
+                raise CalcError(f"Bitte bei „{f['label']}“ eine Zahl eintragen.") from None
             if v is not None:
                 if "min" in f and v < f["min"]:
                     v = f["min"]

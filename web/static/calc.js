@@ -136,17 +136,17 @@ part(() => ({
   stressText() {
     const s = this.res && this.res.stress;
     if (!s) return "";
-    let t = `Hättest du genau am ${this.dateStr(s.peak)} begonnen, kurz vor dem größten Absturz von ${s.lead_name}, wäre dein Depot zwischendurch auf ${this.money(s.low)} gefallen (${this.dateStr(s.low_date)}, eingesetzt bis dahin ${this.money(s.low_invested)}).`;
-    t += ` Nach ${this.num(s.years, 1)} Jahren${s.full ? "" : " (so weit reichen die Daten)"}: ${this.money(s.final)} bei ${this.money(s.invested)} eingesetzt.`;
+    let t = `Angenommen, du hättest am ${this.dateStr(s.peak)} begonnen, kurz vor dem größten Absturz von ${s.lead_name}. Dann wäre dein Geld zwischendurch auf ${this.money(s.low)} geschrumpft (am ${this.dateStr(s.low_date)}). Eingezahlt hattest du bis dahin ${this.money(s.low_invested)}.`;
+    t += ` Nach ${this.num(s.years, 1)} Jahren${s.full ? "" : " (weiter reichen die Daten nicht)"} hättest du ${this.money(s.final)}, eingezahlt ${this.money(s.invested)}.`;
     return t;
   },
   assumptionText() {
     if (!this.res || !this.res.assumptions || !this.res.assumptions.weights) return "";
     const a = this.res.assumptions;
     const w = Object.entries(a.weights).filter(([, v]) => v > 0).map(([k, v]) => this.shortName(k) + " " + this.num(v * 100, 0) + " %").join(", ");
-    return `Annahmen: ${w}; Trend ${a.drift}; ${a.costs ? "mit Kosten" : "ohne Kosten"}; ${a.tax}; ` +
+    return `So wurde gerechnet: ${w}; Wertzuwachs ${a.drift}; ${a.costs ? "mit Kosten" : "ohne Kosten"}; ${a.tax}; ` +
       (a.inflation_pa ? `Inflation ${this.num(a.inflation_pa * 100, 1)} % pro Jahr; ` : "") +
-      `${a.n_sims} durchgespielte Verläufe aus echten Kursen seit ${this.dateStr(a.history_from)}. Wechselkurse bleiben auf heutigem Stand.`;
+      `${a.n_sims} durchgespielte Verläufe aus echten Kursen seit ${this.dateStr(a.history_from)}. Wechselkurse (z. B. Dollar zu Euro) bleiben wie heute.`;
   },
   goalToFutureLink() {
     if (!this.res || !this.res.monthly_50) return "#/rechner/future";

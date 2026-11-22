@@ -103,7 +103,7 @@ def holdings_lines(con, profile: dict, period_key: str, period_label: str, with_
     if with_change and ch:
         line += f"\n{period_label}: {_chg(ch['pct'])} ({'+' if ch['abs'] >= 0 else '−'}{fmt_money(abs(ch['abs']), cur)})"
     if pf["gain"] is not None:
-        line += (f"\nSeit Kauf: {'+' if pf['gain'] >= 0 else '−'}{fmt_money(abs(pf['gain']), cur)} "
+        line += (f"\nSeit dem Kauf: {'+' if pf['gain'] >= 0 else '−'}{fmt_money(abs(pf['gain']), cur)} "
                  f"({_chg(pf['gain_pct'])})")
     return [line]
 
@@ -115,7 +115,8 @@ def market_lines(con, profile: dict) -> list[str]:
         t = (ana.get("trend") or {}).get("label")
         v = (ana.get("vol") or {}).get("label")
         if t:
-            out.append(f"• {ASSETS[a]['name']} {service.TREND_TEXT.get(t, t)}; Kurse {service.VOL_TEXT.get(v, v)}.")
+            out.append(f"• {ASSETS[a]['name']} {service.TREND_TEXT.get(t, t)}. "
+                       f"Schwankung gerade: {service.VOL_TEXT.get(v, v)}.")
     return out
 
 
@@ -137,17 +138,20 @@ def report_text(con, profile: dict) -> str:
         m = market_lines(con, profile)
         if m:
             parts.append("🧭 <b>Marktlage</b>\n" + "\n".join(m))
-    parts.append(f"<i>Preise = reiner Materialwert ohne Händleraufschlag. Einstellungen: {WEB_URL}</i>")
+    parts.append(f"<i>Gold und Silber: reiner Materialwert. Beim Händler zahlst du mehr, beim Verkauf bekommst du meist "
+                 f"weniger. Einstellungen: {WEB_URL}</i>")
     return "\n\n".join(parts)
 
 
 def help_text(linked: bool) -> str:
     if not linked:
         return ("👋 Dieser Chat ist noch mit keinem Profil verbunden.\n\nÖffne die Website "
-                f"{WEB_URL} → <b>Einstellungen</b> → <b>Telegram verbinden</b>.")
-    return ("<b>Befehle</b>\n/bericht – Bericht jetzt schicken\n/preis – aktuelle Preise\n"
-            "/bestand – Wert deines Bestands\n/stop – Telegram trennen\n/hilfe – diese Hilfe\n\n"
-            f"Was und wie oft du Nachrichten bekommst, stellst du hier ein: {WEB_URL}/#/einstellungen")
+                f"{WEB_URL} → <b>Einstellungen</b> → <b>Telegram verbinden</b>. Dort bekommst du einen Link, "
+                "der diesen Chat mit deinem Profil verbindet.")
+    return ("<b>Das kannst du mir schreiben</b>\n/bericht – Bericht jetzt schicken\n/preis – aktuelle Preise deiner "
+            "Anlagen\n/bestand – was dein Bestand gerade wert ist\n/stop – keine Nachrichten mehr (trennen)\n"
+            "/hilfe – diese Übersicht\n\n"
+            f"Was und wie oft du Nachrichten bekommst, stellst du auf der Website ein: {WEB_URL}/#/einstellungen")
 
 
 def schedule_text(s: dict) -> str:
@@ -155,8 +159,8 @@ def schedule_text(s: dict) -> str:
     if r["freq"] == "off":
         return "Bericht: aus"
     when = {"daily": "jeden Tag", "weekly": f"jeden {WEEKDAYS[r['weekday']]}", "monthly": "am 1. jedes Monats"}[r["freq"]]
-    lvl = {"off": "keine Alarme", "strong": "Alarme nur bei sehr großen Bewegungen",
-           "normal": "Alarme bei großen Bewegungen"}[s["alerts"]["level"]]
+    lvl = {"off": "keine Alarme", "strong": "Alarme nur bei sehr großen Kursbewegungen",
+           "normal": "Alarme bei großen Kursbewegungen"}[s["alerts"]["level"]]
     return f"Bericht {when} um {r['hour']} Uhr · {lvl}"
 
 
@@ -172,7 +176,8 @@ def handle(con, msg: dict) -> None:
     if cmd == "/start" and arg.strip():
         pid = profiles.redeem_link_code(con, arg.strip())
         if not pid:
-            send(chat, "❌ Der Code ist ungültig oder abgelaufen. Erzeuge auf der Website einen neuen.")
+            send(chat, "❌ Der Code ist ungültig oder abgelaufen. Er gilt nur einmal und nur 24 Stunden. Hol dir "
+                       "auf der Website unter Einstellungen → Telegram verbinden einen neuen.")
             return
         profiles.set_chat(con, pid, chat)
         p = profiles.get(con, pid)
@@ -189,10 +194,12 @@ def handle(con, msg: dict) -> None:
         send(chat, "💰 <b>Aktuelle Preise</b>\n" + "\n".join(price_lines(con, prof)))
     elif cmd == "/bestand":
         h = holdings_lines(con, prof, "24h", "24 Std.", True)
-        send(chat, h[0] if h else f"Noch kein Bestand eingetragen: {WEB_URL}/#/bestand")
+        send(chat, h[0] if h else f"Du hast noch nichts in deinen Bestand eingetragen. Das geht auf der Website: "
+                                  f"{WEB_URL}/#/bestand")
     elif cmd == "/stop":
         profiles.set_chat(con, prof["id"], None)
-        send(chat, "👋 Getrennt. Du bekommst keine Nachrichten mehr. Neu verbinden über die Website.")
+        send(chat, "👋 Getrennt. Du bekommst keine Nachrichten mehr. Neu verbinden kannst du jederzeit auf der "
+                   "Website unter Einstellungen.")
     else:
         send(chat, f"Profil <b>{html.escape(prof['name'])}</b> · {schedule_text(prof['settings'])}\n\n" + help_text(True))
 
@@ -208,10 +215,10 @@ def run_bot() -> None:
     bot_username(con)
     api("setMyCommands", commands=[
         {"command": "bericht", "description": "Bericht jetzt schicken"},
-        {"command": "preis", "description": "Aktuelle Preise"},
-        {"command": "bestand", "description": "Wert deines Bestands"},
+        {"command": "preis", "description": "Aktuelle Preise deiner Anlagen"},
+        {"command": "bestand", "description": "Was dein Bestand gerade wert ist"},
         {"command": "hilfe", "description": "Hilfe und Einstellungen"},
-        {"command": "stop", "description": "Telegram trennen"}])
+        {"command": "stop", "description": "Keine Nachrichten mehr (trennen)"}])
     offset = db.kv_get(con, "tg:offset", 0)
     log.info("Bot läuft")
     while True:
