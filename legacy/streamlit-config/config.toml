@@ -1,0 +1,8 @@
+[server]
+headless = true
+fileWatcherType = "none"
+port = 8501
+address = "192.168.178.72"
+
+[browser]
+gatherUsageStats = false

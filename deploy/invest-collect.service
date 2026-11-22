@@ -1,0 +1,11 @@
+[Unit]
+Description=Invest-Tool: Kurse alle 5 min + Alarme
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/invest-tool
+ExecStart=/root/invest-tool/.venv/bin/python -m invest collect
+TimeoutStartSec=240
+Nice=10

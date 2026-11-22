@@ -1,0 +1,11 @@
+[Unit]
+Description=Invest-Tool: Training/Backtest (nachts)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/invest-tool
+ExecStart=/root/invest-tool/.venv/bin/python -m invest backtest
+TimeoutStartSec=3600
+Nice=10

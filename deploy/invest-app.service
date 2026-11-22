@@ -1,0 +1,13 @@
+[Unit]
+Description=Invest-Tool: Ratgeber-Website (FastAPI, nur LAN, Port 8501)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/root/invest-tool
+ExecStart=/root/invest-tool/.venv/bin/python -m invest web
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

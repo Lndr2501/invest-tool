@@ -1,0 +1,10 @@
+[Unit]
+Description=Invest-Tool: Training/Backtest (nachts) (Timer)
+
+[Timer]
+OnCalendar=*-*-* 03:20:00
+AccuracySec=5s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

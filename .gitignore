@@ -1,0 +1,17 @@
+# Laufzeit und Umgebung
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Daten: Live-Datenbank mit Bestand, Profilen und API-Keys – nie committen
+data/
+legacy/backups/
+*.sqlite
+*.sqlite-*
+*.db
+
+# Zugangsdaten (liegen in /root/.config/invest-tool/)
+*.env
+.env*
+settings.toml

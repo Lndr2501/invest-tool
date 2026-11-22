@@ -1,0 +1,11 @@
+[Unit]
+Description=Invest-Tool: Tageskurse, FX, Inflation, Analyse (stündlich)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/invest-tool
+ExecStart=/root/invest-tool/.venv/bin/python -m invest refresh
+TimeoutStartSec=900
+Nice=10

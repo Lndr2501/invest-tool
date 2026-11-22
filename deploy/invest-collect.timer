@@ -1,0 +1,10 @@
+[Unit]
+Description=Invest-Tool: Kurse alle 5 min + Alarme (Timer)
+
+[Timer]
+OnCalendar=*:0/5:30
+AccuracySec=5s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,13 @@
+[Unit]
+Description=Invest-Tool: Telegram-Bot (Befehle /bericht, /preis, Verknüpfen)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/root/invest-tool
+ExecStart=/root/invest-tool/.venv/bin/python -m invest bot
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
